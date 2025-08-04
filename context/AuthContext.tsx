@@ -3,6 +3,11 @@ import { User } from '@/types';
 import { getCurrentUser, saveCurrentUser } from '@/utils/storage';
 import { router } from 'expo-router';
 
+const ADMIN_CREDENTIALS = {
+  email: 'sethh@tristate-bearing.com',
+  password: 'Knight_88@',
+};
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -37,27 +42,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
+
+      if (
+        email === ADMIN_CREDENTIALS.email &&
+        password === ADMIN_CREDENTIALS.password
+      ) {
+        const adminUser: User = {
+          id: email,
+          email,
+          role: 'admin',
+          createdAt: Date.now(),
+        };
+
+        await saveCurrentUser(adminUser);
+        setUser(adminUser);
+        router.replace('/(tabs)');
+        return true;
+      }
+
       // Mock authentication (replace with actual API call)
       if (password.length < 6) {
         return false;
       }
-      
-      // Create mock user
+
       const mockUser: User = {
         id: email,
         email,
         role: 'manager',
         createdAt: Date.now(),
       };
-      
-      // Save user to storage
+
       await saveCurrentUser(mockUser);
       setUser(mockUser);
-      
-      // Navigate to main app
       router.replace('/(tabs)');
-      
       return true;
     } catch (error) {
       console.error('Login failed:', error);
