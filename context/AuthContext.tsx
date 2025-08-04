@@ -38,7 +38,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       
-      // Mock authentication (replace with actual API call)
+      // Check for permanent admin user
+      if (email === 'sethh@tristate-bearing.com' && password === 'Knight_88@') {
+        const adminUser: User = {
+          id: 'admin-sethh',
+          email: 'sethh@tristate-bearing.com',
+          role: 'admin',
+          createdAt: Date.now(),
+        };
+        
+        // Save user to storage
+        await saveCurrentUser(adminUser);
+        setUser(adminUser);
+        
+        // Navigate to main app
+        router.replace('/(tabs)');
+        
+        return true;
+      }
+      
+      // Mock authentication for other users (replace with actual API call)
       if (password.length < 6) {
         return false;
       }
