@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { SyncStatus, Op, Conflict } from '@/types';
 import { getOps, getSiteId } from '@/utils/storage';
 import { syncWithServer, syncAllWarehousesToGitHub } from '@/utils/sync';
@@ -13,6 +14,7 @@ interface SyncContextType {
   addPendingOp: (op: Op) => void;
   conflicts: Conflict[];
   resolveConflict: (conflictId: string, keepMine: boolean) => Promise<void>;
+  lastSyncError: string | null;
 }
 
 const SyncContext = createContext<SyncContextType | undefined>(undefined);
@@ -25,6 +27,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     isSyncing: false,
   });
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null);
   const { currentWarehouse } = useWarehouse();
   const { registerSyncCallback } = useSyncHook();
   
@@ -95,6 +98,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
           lastSyncTime: Date.now(),
           pendingOps: 0,
         }));
+        setLastSyncError(null);
         
         // Handle conflicts
         if (result.conflicts.length > 0) {
@@ -103,6 +107,17 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Sync failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
+      setLastSyncError(errorMessage);
+      
+      // Show user-friendly error for GitHub authentication issues
+      if (errorMessage.includes('GitHub authentication failed')) {
+        Alert.alert(
+          'Sync Failed',
+          'GitHub authentication failed. Please update your GitHub token in Settings.',
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setSyncStatus(prev => ({ ...prev, isSyncing: false }));
     }
@@ -124,6 +139,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
           lastSyncTime: Date.now(),
           pendingOps: 0,
         }));
+        setLastSyncError(null);
         
         // Handle conflicts
         if (result.conflicts.length > 0) {
@@ -131,9 +147,31 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         }
         
         console.log('Full sync to GitHub completed successfully');
+        Alert.alert(
+          'Sync Complete',
+          'All data has been successfully synced to GitHub.',
+          [{ text: 'OK' }]
+        );
       }
     } catch (error) {
       console.error('Full sync failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
+      setLastSyncError(errorMessage);
+      
+      // Show user-friendly error for GitHub authentication issues
+      if (errorMessage.includes('GitHub authentication failed')) {
+        Alert.alert(
+          'Sync Failed',
+          'GitHub authentication failed. Please update your GitHub token in Settings.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Sync Failed',
+          `Failed to sync with GitHub: ${errorMessage}`,
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setSyncStatus(prev => ({ ...prev, isSyncing: false }));
     }
@@ -175,6 +213,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         addPendingOp,
         conflicts,
         resolveConflict: handleResolveConflict,
+        lastSyncError,
       }}
     >
       {children}

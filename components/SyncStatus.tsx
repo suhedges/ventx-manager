@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
-import { RefreshCw, Wifi, WifiOff } from 'lucide-react-native';
+import { RefreshCw, Wifi, WifiOff, AlertTriangle } from 'lucide-react-native';
 import { useSync } from '@/context/SyncContext';
 
 interface SyncStatusProps {
@@ -8,7 +8,7 @@ interface SyncStatusProps {
 }
 
 export default function SyncStatus({ testID }: SyncStatusProps) {
-  const { syncStatus, triggerSync, triggerFullSync } = useSync();
+  const { syncStatus, triggerSync, triggerFullSync, lastSyncError } = useSync();
   
   const formatLastSyncTime = () => {
     if (!syncStatus.lastSyncTime) return 'Never';
@@ -63,6 +63,16 @@ export default function SyncStatus({ testID }: SyncStatusProps) {
             <Text style={styles.pendingText}>
               {syncStatus.pendingOps} pending {syncStatus.pendingOps === 1 ? 'change' : 'changes'}
             </Text>
+          )}
+          {lastSyncError && (
+            <View style={styles.errorContainer}>
+              <AlertTriangle size={12} color="#e53935" />
+              <Text style={styles.errorText} numberOfLines={1}>
+                {lastSyncError.includes('GitHub authentication failed') 
+                  ? 'GitHub token expired' 
+                  : 'Sync error'}
+              </Text>
+            </View>
           )}
         </View>
       </View>
@@ -158,6 +168,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#ff9800',
     fontWeight: '500',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  errorText: {
+    fontSize: 11,
+    color: '#e53935',
+    marginLeft: 4,
+    flex: 1,
   },
   buttonContainer: {
     flexDirection: 'column',

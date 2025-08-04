@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch, Pressable, Alert, ScrollView } from 'react-native';
-import { Database, HelpCircle } from 'lucide-react-native';
+import { View, Text, StyleSheet, Switch, Pressable, Alert, ScrollView, TextInput } from 'react-native';
+import { Database, HelpCircle, Key, Save } from 'lucide-react-native';
 import SyncStatus from '@/components/SyncStatus';
+import { updateGitHubToken } from '@/utils/sync';
 
 export default function SettingsScreen() {
   const [offlineMode, setOfflineMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [autoSync, setAutoSync] = useState(true);
+  const [githubToken, setGithubToken] = useState('');
+  const [showTokenInput, setShowTokenInput] = useState(false);
   
   const handleClearData = () => {
     Alert.alert(
@@ -31,6 +34,37 @@ export default function SettingsScreen() {
       'About VentX',
       'VentX is a secure, offline-first inventory management application designed for multi-user environments. Version 1.0.0',
       [{ text: 'OK' }]
+    );
+  };
+  
+  const handleUpdateToken = () => {
+    if (!githubToken.trim()) {
+      Alert.alert('Error', 'Please enter a valid GitHub token.');
+      return;
+    }
+    
+    updateGitHubToken(githubToken.trim());
+    setShowTokenInput(false);
+    setGithubToken('');
+    
+    Alert.alert(
+      'Success',
+      'GitHub token has been updated. You can now sync with GitHub.',
+      [{ text: 'OK' }]
+    );
+  };
+  
+  const handleConfigureGitHub = () => {
+    Alert.alert(
+      'Configure GitHub Sync',
+      'To sync with GitHub, you need a personal access token with repository access. The current token may be expired.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Update Token',
+          onPress: () => setShowTokenInput(true),
+        },
+      ]
     );
   };
   
@@ -94,6 +128,58 @@ export default function SettingsScreen() {
               accessibilityLabel="Toggle notifications"
             />
           </View>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>GitHub Sync</Text>
+          
+          <Pressable
+            style={styles.actionButton}
+            onPress={handleConfigureGitHub}
+            testID="configure-github-button"
+            accessibilityLabel="Configure GitHub sync"
+          >
+            <Key size={20} color="#1a3a6a" />
+            <Text style={styles.actionButtonText}>
+              Configure GitHub Token
+            </Text>
+          </Pressable>
+          
+          {showTokenInput && (
+            <View style={styles.tokenInputContainer}>
+              <Text style={styles.tokenInputLabel}>
+                Enter your GitHub Personal Access Token:
+              </Text>
+              <TextInput
+                style={styles.tokenInput}
+                value={githubToken}
+                onChangeText={setGithubToken}
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                testID="github-token-input"
+              />
+              <View style={styles.tokenActions}>
+                <Pressable
+                  style={[styles.tokenButton, styles.cancelButton]}
+                  onPress={() => {
+                    setShowTokenInput(false);
+                    setGithubToken('');
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.tokenButton, styles.saveButton]}
+                  onPress={handleUpdateToken}
+                >
+                  <Save size={16} color="#fff" />
+                  <Text style={styles.saveButtonText}>Save Token</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
         </View>
         
         <View style={styles.section}>
@@ -190,5 +276,59 @@ const styles = StyleSheet.create({
   },
   dangerText: {
     color: '#e53935',
+  },
+  tokenInputContainer: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  tokenInputLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  tokenInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#fff',
+    fontFamily: 'monospace',
+  },
+  tokenActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+    gap: 8,
+  },
+  tokenButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 6,
+  },
+  cancelButton: {
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  saveButton: {
+    backgroundColor: '#1a3a6a',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

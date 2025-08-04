@@ -182,8 +182,13 @@ export const resolveConflict = async (
 const GITHUB_CONFIG = {
   owner: 'suhedges',
   repo: 'ventx-manager',
-  token: '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',
+  token: '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', // This token may need to be updated
   baseUrl: 'https://api.github.com',
+};
+
+// Function to update GitHub token (for future use)
+export const updateGitHubToken = (newToken: string) => {
+  GITHUB_CONFIG.token = newToken;
 };
 
 // GitHub API helper functions
@@ -200,6 +205,13 @@ const githubRequest = async (endpoint: string, options: RequestInit = {}): Promi
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`GitHub API error: ${response.status} ${response.statusText}`, errorText);
+    
+    if (response.status === 401) {
+      throw new Error(`GitHub authentication failed. The token may be expired or invalid. Status: ${response.status}`);
+    }
+    
     throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
   }
 
