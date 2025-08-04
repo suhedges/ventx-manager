@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { SyncStatus, Op, Conflict } from '@/types';
 import { getOps, getSiteId } from '@/utils/storage';
-import { syncWithServer } from '@/utils/sync';
+import { syncWithServer, syncAllWarehousesToGitHub } from '@/utils/sync';
 import { useWarehouse } from './WarehouseContext';
 import { useSyncHook } from './SyncHook';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
@@ -9,6 +9,7 @@ import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 interface SyncContextType {
   syncStatus: SyncStatus;
   triggerSync: () => Promise<void>;
+  triggerFullSync: () => Promise<void>;
   addPendingOp: (op: Op) => void;
   conflicts: Conflict[];
   resolveConflict: (conflictId: string, keepMine: boolean) => Promise<void>;
@@ -107,6 +108,37 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     }
   };
   
+  const triggerFullSync = async (): Promise<void> => {
+    if (!syncStatus.isOnline || syncStatus.isSyncing) {
+      return;
+    }
+    
+    try {
+      setSyncStatus(prev => ({ ...prev, isSyncing: true }));
+      
+      const result = await syncAllWarehousesToGitHub();
+      
+      if (result.success) {
+        setSyncStatus(prev => ({
+          ...prev,
+          lastSyncTime: Date.now(),
+          pendingOps: 0,
+        }));
+        
+        // Handle conflicts
+        if (result.conflicts.length > 0) {
+          setConflicts(prev => [...prev, ...result.conflicts]);
+        }
+        
+        console.log('Full sync to GitHub completed successfully');
+      }
+    } catch (error) {
+      console.error('Full sync failed:', error);
+    } finally {
+      setSyncStatus(prev => ({ ...prev, isSyncing: false }));
+    }
+  };
+  
   const addPendingOp = (op: Op) => {
     setSyncStatus(prev => ({
       ...prev,
@@ -139,6 +171,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       value={{
         syncStatus,
         triggerSync,
+        triggerFullSync,
         addPendingOp,
         conflicts,
         resolveConflict: handleResolveConflict,

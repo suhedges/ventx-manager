@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Warehouse, Item, FilterOptions, Op } from '@/types';
 import { getWarehouses, saveWarehouses, getItems, saveItems } from '@/utils/storage';
-import { createOp, applyOpLocally } from '@/utils/sync';
+import { createOp, applyOpLocally, loadWarehousesFromGitHub } from '@/utils/sync';
 import { useAuth } from './AuthContext';
 import { useSyncHook } from './SyncHook';
 import { v4 as uuidv4 } from 'uuid';
@@ -46,8 +46,22 @@ export function WarehouseProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadWarehouses = async () => {
       try {
-        const storedWarehouses = await getWarehouses();
+        // First load local warehouses
+        let storedWarehouses = await getWarehouses();
         setWarehouses(storedWarehouses);
+        
+        // Try to load and merge warehouses from GitHub
+        try {
+          const githubResult = await loadWarehousesFromGitHub();
+          if (githubResult.success && githubResult.warehouses.length > 0) {
+            // Use the merged warehouses from GitHub
+            setWarehouses(githubResult.warehouses);
+            storedWarehouses = githubResult.warehouses;
+            console.log('Successfully loaded warehouses from GitHub');
+          }
+        } catch (error) {
+          console.warn('Failed to load warehouses from GitHub, using local only:', error);
+        }
         
         // If there's at least one warehouse, select the first one
         if (storedWarehouses.length > 0) {

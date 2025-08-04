@@ -178,24 +178,420 @@ export const resolveConflict = async (
   }
 };
 
-// Mock sync function (in a real app, this would communicate with a server)
-export const syncWithServer = async (whId: string): Promise<{ success: boolean; conflicts: Conflict[] }> => {
-  // In a real implementation, this would send pending ops to the server
-  // and receive new ops from other clients
-  
-  // For now, just mark all ops as synced
-  const ops = await getOps(whId);
-  const unsyncedOps = ops.filter(op => !op.synced);
-  
-  for (const op of unsyncedOps) {
-    op.synced = true;
+// GitHub sync configuration
+const GITHUB_CONFIG = {
+  owner: 'suhedges',
+  repo: 'ventx-manager',
+  token: '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',
+  baseUrl: 'https://api.github.com',
+};
+
+// GitHub API helper functions
+const githubRequest = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
+  const url = `${GITHUB_CONFIG.baseUrl}${endpoint}`;
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Authorization': `token ${GITHUB_CONFIG.token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
   }
-  
-  await saveOps(whId, ops);
-  
-  // Return mock response
-  return {
-    success: true,
-    conflicts: [], // In a real app, the server would return conflicts
+
+  return response.json();
+};
+
+const getFileFromGitHub = async (path: string): Promise<{ content: string; sha: string } | null> => {
+  try {
+    const response = await githubRequest(`/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${path}`);
+    return {
+      content: atob(response.content.replace(/\s/g, '')),
+      sha: response.sha,
+    };
+  } catch (error) {
+    // File doesn't exist
+    return null;
+  }
+};
+
+const saveFileToGitHub = async (path: string, content: string, sha?: string): Promise<void> => {
+  const body: any = {
+    message: `Update ${path} - ${new Date().toISOString()}`,
+    content: btoa(content),
   };
+
+  if (sha) {
+    body.sha = sha;
+  }
+
+  await githubRequest(`/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${path}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+};
+
+// Sync data structure for GitHub
+type GitHubSyncData = {
+  warehouses: any[];
+  items: Record<string, any[]>;
+  operations: Record<string, any[]>;
+  conflicts: Record<string, any[]>;
+  lastSync: number;
+  siteId: string;
+};
+
+// Merge operations from multiple sites
+const mergeOperations = (localOps: Op[], remoteOps: Op[]): { merged: Op[]; conflicts: Conflict[] } => {
+  const allOps = [...localOps, ...remoteOps];
+  const uniqueOps = new Map<string, Op>();
+  const conflicts: Conflict[] = [];
+
+  // Remove duplicates by opId
+  allOps.forEach(op => {
+    if (!uniqueOps.has(op.opId)) {
+      uniqueOps.set(op.opId, op);
+    }
+  });
+
+  // Sort by timestamp for deterministic ordering
+  const sortedOps = Array.from(uniqueOps.values()).sort((a, b) => {
+    if (a.ts !== b.ts) return a.ts - b.ts;
+    return a.siteId.localeCompare(b.siteId);
+  });
+
+  // Detect conflicts for concurrent field updates
+  const fieldUpdates = new Map<string, Op[]>();
+  
+  sortedOps.forEach(op => {
+    if (op.type === 'setField' && op.field) {
+      const key = `${op.whId}:${op.internal}:${op.field}`;
+      if (!fieldUpdates.has(key)) {
+        fieldUpdates.set(key, []);
+      }
+      fieldUpdates.get(key)!.push(op);
+    }
+  });
+
+  // Check for conflicts in concurrent field updates
+  fieldUpdates.forEach((ops, key) => {
+    if (ops.length > 1) {
+      // Group by timestamp to find concurrent updates
+      const timeGroups = new Map<number, Op[]>();
+      ops.forEach(op => {
+        if (!timeGroups.has(op.ts)) {
+          timeGroups.set(op.ts, []);
+        }
+        timeGroups.get(op.ts)!.push(op);
+      });
+
+      timeGroups.forEach(group => {
+        if (group.length > 1) {
+          // Multiple operations at the same timestamp - conflict!
+          const [whId, internal, field] = key.split(':');
+          const baseOp = group[0];
+          
+          for (let i = 1; i < group.length; i++) {
+            const conflictOp = group[i];
+            conflicts.push({
+              id: uuidv4(),
+              whId,
+              internal,
+              field: field as FieldType,
+              mine: baseOp.value as string | number,
+              theirs: conflictOp.value as string | number,
+              baseTs: baseOp.ts,
+            });
+          }
+        }
+      });
+    }
+  });
+
+  return { merged: sortedOps, conflicts };
+};
+
+// Apply operations to rebuild item state
+const rebuildItemsFromOps = (ops: Op[]): Item[] => {
+  const itemsMap = new Map<string, Item>();
+
+  ops.forEach(op => {
+    const key = `${op.whId}:${op.internal}`;
+    let item = itemsMap.get(key);
+
+    if (!item && op.type === 'createItem') {
+      item = {
+        whId: op.whId,
+        internal: op.internal,
+        qty: 0,
+        lastTs: 0,
+        lastSiteId: '',
+      };
+      itemsMap.set(key, item);
+    }
+
+    if (item) {
+      const updatedItem = applyOpToItem(item, op);
+      itemsMap.set(key, updatedItem);
+    }
+  });
+
+  return Array.from(itemsMap.values()).filter(item => !item.deleted);
+};
+
+// Load warehouses from GitHub on startup
+export const loadWarehousesFromGitHub = async (): Promise<{ success: boolean; warehouses: any[] }> => {
+  try {
+    const dataPath = 'data/sync-data.json';
+    
+    // Get remote data from GitHub
+    const remoteFile = await getFileFromGitHub(dataPath);
+    if (!remoteFile) {
+      return { success: true, warehouses: [] };
+    }
+
+    try {
+      const remoteData: GitHubSyncData = JSON.parse(remoteFile.content);
+      
+      // Merge with local warehouses
+      const { getWarehouses, saveWarehouses } = await import('./storage');
+      const localWarehouses = await getWarehouses();
+      
+      // Merge warehouses (prefer remote if newer)
+      const mergedWarehouses = [...remoteData.warehouses];
+      localWarehouses.forEach(localWh => {
+        const existingIndex = mergedWarehouses.findIndex(w => w.id === localWh.id);
+        if (existingIndex >= 0) {
+          // Keep the newer version
+          if (localWh.updatedAt > mergedWarehouses[existingIndex].updatedAt) {
+            mergedWarehouses[existingIndex] = localWh;
+          }
+        } else {
+          // Add local warehouse if not in remote
+          mergedWarehouses.push(localWh);
+        }
+      });
+      
+      // Save merged warehouses locally
+      await saveWarehouses(mergedWarehouses);
+      
+      console.log(`Loaded ${mergedWarehouses.length} warehouses from GitHub`);
+      
+      return {
+        success: true,
+        warehouses: mergedWarehouses,
+      };
+    } catch (error) {
+      console.warn('Failed to parse remote warehouse data:', error);
+      return { success: true, warehouses: [] };
+    }
+  } catch (error) {
+    console.error('Failed to load warehouses from GitHub:', error);
+    return { success: false, warehouses: [] };
+  }
+};
+
+// Sync all warehouses to GitHub
+export const syncAllWarehousesToGitHub = async (): Promise<{ success: boolean; conflicts: Conflict[] }> => {
+  try {
+    const siteId = await getSiteId();
+    const dataPath = 'data/sync-data.json';
+    
+    // Get all local warehouses
+    const { getWarehouses } = await import('./storage');
+    const localWarehouses = await getWarehouses();
+    
+    // Get remote data from GitHub
+    const remoteFile = await getFileFromGitHub(dataPath);
+    let remoteData: GitHubSyncData = {
+      warehouses: [],
+      items: {},
+      operations: {},
+      conflicts: {},
+      lastSync: 0,
+      siteId: '',
+    };
+
+    if (remoteFile) {
+      try {
+        remoteData = JSON.parse(remoteFile.content);
+      } catch (error) {
+        console.warn('Failed to parse remote data, using empty state');
+      }
+    }
+
+    // Merge warehouses (simple last-writer-wins for now)
+    const mergedWarehouses = [...remoteData.warehouses];
+    localWarehouses.forEach(localWh => {
+      const existingIndex = mergedWarehouses.findIndex(w => w.id === localWh.id);
+      if (existingIndex >= 0) {
+        // Update if local is newer
+        if (localWh.updatedAt > mergedWarehouses[existingIndex].updatedAt) {
+          mergedWarehouses[existingIndex] = localWh;
+        }
+      } else {
+        // Add new warehouse
+        mergedWarehouses.push(localWh);
+      }
+    });
+
+    // Collect all conflicts from all warehouses
+    const allConflicts: Conflict[] = [];
+    const updatedItems: Record<string, any[]> = {};
+    const updatedOperations: Record<string, any[]> = {};
+    const updatedConflicts: Record<string, any[]> = {};
+
+    // Sync each warehouse's data
+    for (const warehouse of mergedWarehouses) {
+      const whId = warehouse.id;
+      
+      // Get local data for this warehouse
+      const localOps = await getOps(whId);
+      const localItems = await getItems(whId);
+      const localConflicts = await getConflicts(whId);
+      
+      // Get remote operations for this warehouse
+      const remoteOps = remoteData.operations[whId] || [];
+      
+      // Merge operations and detect conflicts
+      const { merged: mergedOps, conflicts: newConflicts } = mergeOperations(localOps, remoteOps);
+      
+      // Rebuild items from merged operations
+      const rebuiltItems = rebuildItemsFromOps(mergedOps);
+      
+      // Mark all operations as synced
+      const syncedOps = mergedOps.map(op => ({ ...op, synced: true }));
+      
+      // Store updated data
+      updatedItems[whId] = rebuiltItems;
+      updatedOperations[whId] = syncedOps;
+      updatedConflicts[whId] = [...localConflicts, ...newConflicts];
+      
+      // Collect conflicts
+      allConflicts.push(...newConflicts);
+      
+      // Update local storage for this warehouse
+      await saveItems(whId, rebuiltItems);
+      await saveOps(whId, syncedOps);
+      await saveConflicts(whId, updatedConflicts[whId]);
+    }
+    
+    // Prepare updated data for GitHub
+    const updatedData: GitHubSyncData = {
+      warehouses: mergedWarehouses,
+      items: updatedItems,
+      operations: updatedOperations,
+      conflicts: updatedConflicts,
+      lastSync: Date.now(),
+      siteId,
+    };
+    
+    // Save to GitHub
+    await saveFileToGitHub(dataPath, JSON.stringify(updatedData, null, 2), remoteFile?.sha);
+    
+    // Update local warehouses
+    const { saveWarehouses } = await import('./storage');
+    await saveWarehouses(mergedWarehouses);
+    
+    console.log(`Full sync completed. Warehouses: ${mergedWarehouses.length}, Total conflicts: ${allConflicts.length}`);
+    
+    return {
+      success: true,
+      conflicts: allConflicts,
+    };
+  } catch (error) {
+    console.error('Full sync failed:', error);
+    return {
+      success: false,
+      conflicts: [],
+    };
+  }
+};
+
+// Main sync function with GitHub (for single warehouse)
+export const syncWithServer = async (whId: string): Promise<{ success: boolean; conflicts: Conflict[] }> => {
+  try {
+    const siteId = await getSiteId();
+    const dataPath = 'data/sync-data.json';
+    
+    // Get current local data
+    const localOps = await getOps(whId);
+    const localItems = await getItems(whId);
+    const localConflicts = await getConflicts(whId);
+    
+    // Get remote data from GitHub
+    const remoteFile = await getFileFromGitHub(dataPath);
+    let remoteData: GitHubSyncData = {
+      warehouses: [],
+      items: {},
+      operations: {},
+      conflicts: {},
+      lastSync: 0,
+      siteId: '',
+    };
+
+    if (remoteFile) {
+      try {
+        remoteData = JSON.parse(remoteFile.content);
+      } catch (error) {
+        console.warn('Failed to parse remote data, using empty state');
+      }
+    }
+
+    // Get remote operations for this warehouse
+    const remoteOps = remoteData.operations[whId] || [];
+    
+    // Merge operations and detect conflicts
+    const { merged: mergedOps, conflicts: newConflicts } = mergeOperations(localOps, remoteOps);
+    
+    // Rebuild items from merged operations
+    const rebuiltItems = rebuildItemsFromOps(mergedOps);
+    
+    // Mark all operations as synced
+    const syncedOps = mergedOps.map(op => ({ ...op, synced: true }));
+    
+    // Prepare updated data for GitHub
+    const updatedData: GitHubSyncData = {
+      ...remoteData,
+      operations: {
+        ...remoteData.operations,
+        [whId]: syncedOps,
+      },
+      items: {
+        ...remoteData.items,
+        [whId]: rebuiltItems,
+      },
+      conflicts: {
+        ...remoteData.conflicts,
+        [whId]: [...localConflicts, ...newConflicts],
+      },
+      lastSync: Date.now(),
+      siteId,
+    };
+    
+    // Save to GitHub
+    await saveFileToGitHub(dataPath, JSON.stringify(updatedData, null, 2), remoteFile?.sha);
+    
+    // Update local storage with merged data
+    await saveItems(whId, rebuiltItems);
+    await saveOps(whId, syncedOps);
+    await saveConflicts(whId, updatedData.conflicts[whId]);
+    
+    console.log(`Sync completed for warehouse ${whId}. Operations: ${syncedOps.length}, Conflicts: ${newConflicts.length}`);
+    
+    return {
+      success: true,
+      conflicts: newConflicts,
+    };
+  } catch (error) {
+    console.error('Sync failed:', error);
+    return {
+      success: false,
+      conflicts: [],
+    };
+  }
 };
