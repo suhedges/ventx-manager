@@ -12,6 +12,7 @@ const KEYS = {
   OPS_PREFIX: 'ventx:ops:',
   CONFLICTS_PREFIX: 'ventx:conflicts:',
   SYNC_CURSOR: 'ventx:syncCursor',
+  GITHUB_TOKEN: 'ventx:githubToken',
 };
 
 // Generate or retrieve site ID
@@ -97,6 +98,19 @@ export const saveSyncCursor = async (cursor: string): Promise<void> => {
 
 export const getSyncCursor = async (): Promise<string | null> => {
   return AsyncStorage.getItem(KEYS.SYNC_CURSOR);
+};
+
+// GitHub token storage
+export const saveGitHubToken = async (token: string): Promise<void> => {
+  await AsyncStorage.setItem(KEYS.GITHUB_TOKEN, token);
+};
+
+export const getGitHubToken = async (): Promise<string | null> => {
+  return AsyncStorage.getItem(KEYS.GITHUB_TOKEN);
+};
+
+export const removeGitHubToken = async (): Promise<void> => {
+  await AsyncStorage.removeItem(KEYS.GITHUB_TOKEN);
 };
 
 // Clear all data (for logout)

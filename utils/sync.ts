@@ -182,37 +182,81 @@ export const resolveConflict = async (
 const GITHUB_CONFIG = {
   owner: 'suhedges',
   repo: 'ventx-manager',
-  token: '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', // This token may need to be updated
+  token: '', // Token will be set from storage or environment
   baseUrl: 'https://api.github.com',
 };
 
-// Function to update GitHub token (for future use)
-export const updateGitHubToken = (newToken: string) => {
+// Initialize GitHub token from storage
+const initializeGitHubToken = async (): Promise<string> => {
+  try {
+    const { getGitHubToken } = await import('./storage');
+    const storedToken = await getGitHubToken();
+    if (storedToken && storedToken !== 'ghp_YOUR_NEW_TOKEN_HERE') {
+      GITHUB_CONFIG.token = storedToken;
+      return storedToken;
+    }
+    
+    // No valid token found - throw error with instructions
+    throw new Error('GitHub token not configured. Please go to Settings and configure a valid GitHub Personal Access Token.');
+  } catch (error) {
+    console.error('Failed to initialize GitHub token:', error);
+    throw new Error('GitHub token not configured. Please go to Settings and configure a valid GitHub Personal Access Token with "repo" scope from https://github.com/settings/tokens');
+  }
+};
+
+// Function to update GitHub token
+export const updateGitHubToken = async (newToken: string): Promise<void> => {
   GITHUB_CONFIG.token = newToken;
+  
+  // Save to storage
+  try {
+    const { saveGitHubToken } = await import('./storage');
+    await saveGitHubToken(newToken);
+    console.log('GitHub token updated successfully');
+  } catch (error) {
+    console.error('Failed to save GitHub token:', error);
+  }
 };
 
 // GitHub API helper functions
 const githubRequest = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
+  // Ensure token is initialized
+  if (!GITHUB_CONFIG.token) {
+    await initializeGitHubToken();
+  }
+  
   const url = `${GITHUB_CONFIG.baseUrl}${endpoint}`;
   const response = await fetch(url, {
     ...options,
     headers: {
-      'Authorization': `token ${GITHUB_CONFIG.token}`,
+      'Authorization': `Bearer ${GITHUB_CONFIG.token}`,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
+      'User-Agent': 'VentX-Manager/1.0',
       ...options.headers,
     },
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`GitHub API error: ${response.status} ${response.statusText}`, errorText);
-    
-    if (response.status === 401) {
-      throw new Error(`GitHub authentication failed. The token may be expired or invalid. Status: ${response.status}`);
+    let errorText = '';
+    try {
+      const errorData = await response.json();
+      errorText = JSON.stringify(errorData);
+    } catch {
+      errorText = await response.text();
     }
     
-    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+    console.error(`GitHub API error: ${response.status}`, errorText);
+    
+    if (response.status === 401) {
+      throw new Error(`GitHub authentication failed. Please check your token permissions and expiration. The token may need to be regenerated from https://github.com/settings/tokens with 'repo' scope.`);
+    }
+    
+    if (response.status === 403) {
+      throw new Error(`GitHub API rate limit exceeded or insufficient permissions. Please check your token scope includes 'repo' permissions.`);
+    }
+    
+    throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
   }
 
   return response.json();

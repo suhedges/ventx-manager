@@ -37,31 +37,45 @@ export default function SettingsScreen() {
     );
   };
   
-  const handleUpdateToken = () => {
+  const handleUpdateToken = async () => {
     if (!githubToken.trim()) {
       Alert.alert('Error', 'Please enter a valid GitHub token.');
       return;
     }
     
-    updateGitHubToken(githubToken.trim());
-    setShowTokenInput(false);
-    setGithubToken('');
+    if (!githubToken.trim().startsWith('ghp_')) {
+      Alert.alert('Error', 'Please enter a valid GitHub Personal Access Token (should start with "ghp_").');
+      return;
+    }
     
-    Alert.alert(
-      'Success',
-      'GitHub token has been updated. You can now sync with GitHub.',
-      [{ text: 'OK' }]
-    );
+    try {
+      await updateGitHubToken(githubToken.trim());
+      setShowTokenInput(false);
+      setGithubToken('');
+      
+      Alert.alert(
+        'Success',
+        'GitHub token has been updated successfully. You can now sync with GitHub.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Failed to update GitHub token:', error);
+      Alert.alert(
+        'Error',
+        'Failed to save the GitHub token. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
   
   const handleConfigureGitHub = () => {
     Alert.alert(
       'Configure GitHub Sync',
-      'To sync with GitHub, you need a personal access token with repository access. The current token may be expired.',
+      'To sync with GitHub, you need a Personal Access Token with "repo" permissions.\n\n1. Go to https://github.com/settings/tokens\n2. Click "Generate new token (classic)"\n3. Select "repo" scope\n4. Copy the token and paste it below',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Update Token',
+          text: 'Enter Token',
           onPress: () => setShowTokenInput(true),
         },
       ]
@@ -149,6 +163,12 @@ export default function SettingsScreen() {
             <View style={styles.tokenInputContainer}>
               <Text style={styles.tokenInputLabel}>
                 Enter your GitHub Personal Access Token:
+              </Text>
+              <Text style={styles.tokenInstructions}>
+                1. Go to https://github.com/settings/tokens{"\n"}
+                2. Click &quot;Generate new token (classic)&quot;{"\n"}
+                3. Select &quot;repo&quot; scope for full repository access{"\n"}
+                4. Copy and paste the token below
               </Text>
               <TextInput
                 style={styles.tokenInput}
@@ -289,6 +309,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 8,
+    fontWeight: '600',
+  },
+  tokenInstructions: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 12,
+    lineHeight: 16,
+    backgroundColor: '#f0f8ff',
+    padding: 8,
+    borderRadius: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: '#1a3a6a',
   },
   tokenInput: {
     borderWidth: 1,
