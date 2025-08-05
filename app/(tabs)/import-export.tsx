@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, ScrollView } from 'react-native';
 import { FileText, Upload, TrendingUp } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useWarehouse } from '@/context/WarehouseContext';
@@ -19,7 +19,7 @@ export default function ImportExportScreen() {
     router.push('/import' as any);
   };
   
-  const handleExport = (mode: ExportMode) => {
+  const handleExport = async (mode: ExportMode) => {
     if (!currentWarehouse) {
       Alert.alert('No Warehouse Selected', 'Please select a warehouse first.');
       return;
@@ -38,34 +38,19 @@ export default function ImportExportScreen() {
       const csvContent = convertItemsToCSV(itemsToExport);
       const filename = getExportFilename(mode, currentWarehouse.name);
       
-      if (Platform.OS === 'web') {
-        downloadCSV(csvContent, filename);
-        Alert.alert(
-          'Export Successful',
-          `Exported ${itemsToExport.length} items as ${filename}`,
-          [{ text: 'OK' }]
-        );
-      } else {
-        // For mobile, show the CSV content in an alert for now
-        // In a production app, you would use expo-sharing to share the file
-        Alert.alert(
-          'Export Ready',
-          `CSV content ready with ${itemsToExport.length} items. In a production app, this would be shared as a file.`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'View Content', 
-              onPress: () => {
-                console.log('CSV Content:', csvContent);
-                Alert.alert('CSV Content', csvContent.substring(0, 500) + (csvContent.length > 500 ? '...' : ''));
-              }
-            }
-          ]
-        );
-      }
+      await downloadCSV(csvContent, filename);
+      
+      Alert.alert(
+        'Export Successful',
+        `Successfully exported ${itemsToExport.length} items as ${filename}`,
+        [{ text: 'OK' }]
+      );
     } catch (error) {
       console.error('Export failed:', error);
-      Alert.alert('Export Failed', 'An error occurred while exporting the data.');
+      Alert.alert(
+        'Export Failed', 
+        error instanceof Error ? error.message : 'An error occurred while exporting the data.'
+      );
     }
   };
   

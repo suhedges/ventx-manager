@@ -1,5 +1,7 @@
 import { Item } from '@/types';
 import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 export type ExportMode = 'all' | 'belowMin' | 'belowMax' | 'overstock';
 
@@ -49,7 +51,7 @@ function escapeCSVField(field: string): string {
   return field;
 }
 
-export function downloadCSV(csvContent: string, filename: string): void {
+export async function downloadCSV(csvContent: string, filename: string): Promise<void> {
   if (Platform.OS === 'web') {
     // Web implementation
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -62,10 +64,27 @@ export function downloadCSV(csvContent: string, filename: string): void {
     link.click();
     document.body.removeChild(link);
   } else {
-    // Mobile implementation - we'll use sharing
-    console.log('CSV content ready for sharing:', csvContent.substring(0, 100) + '...');
-    // Note: For mobile, we would typically use expo-sharing or expo-file-system
-    // but since we need web compatibility, we'll show an alert with instructions
+    // Mobile implementation using expo-file-system and expo-sharing
+    try {
+      const fileUri = FileSystem.documentDirectory + filename;
+      await FileSystem.writeAsStringAsync(fileUri, csvContent, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/csv',
+          dialogTitle: 'Export CSV File',
+          UTI: 'public.comma-separated-values-text',
+        });
+      } else {
+        console.log('Sharing is not available on this device');
+        throw new Error('Sharing is not available on this device');
+      }
+    } catch (error) {
+      console.error('Error sharing CSV file:', error);
+      throw error;
+    }
   }
 }
 
