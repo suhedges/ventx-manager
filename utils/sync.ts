@@ -267,7 +267,7 @@ const githubRequest = async (endpoint: string, options: RequestInit = {}): Promi
     console.error(`GitHub API error: ${response.status}`, errorText);
     
     if (response.status === 401) {
-      throw new Error(`GitHub authentication failed. The token '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' is invalid, expired, or revoked. Please generate a new token from https://github.com/settings/tokens with 'repo' scope and update the token in utils/secureToken.ts`);
+      throw new Error(`GitHub authentication failed. Please check your token permissions and expiration. The token may need to be regenerated from https://github.com/settings/tokens with 'repo' scope.`);
     }
     
     if (response.status === 403) {

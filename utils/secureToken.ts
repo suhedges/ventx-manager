@@ -74,10 +74,9 @@ export const storeSecureToken = async (): Promise<void> => {
     const fullToken = getEnvToken();
 
     if (!fullToken) {
-      console.log('No GitHub token found in environment. Using hardcoded token.');
-      // Use the hardcoded token from previous messages
-      const hardcodedToken = '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';
-      await storeTokenParts(hardcodedToken);
+      console.log('No GitHub token found in environment variables.');
+      console.log('Please set EXPO_PUBLIC_GITHUB_TOKEN or GITHUB_TOKEN environment variable.');
+      console.log('Generate a new token at: https://github.com/settings/tokens');
       return;
     }
     
@@ -146,13 +145,13 @@ export const getSecureToken = async (): Promise<string | null> => {
       return reconstructedToken;
     }
     
-    // Fallback to hardcoded token
-    console.log('Using fallback hardcoded token');
-    return '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';
+    // No valid token available
+    console.log('No valid token found. Please set up a GitHub token.');
+    return null;
   } catch (error) {
     console.error('Failed to retrieve secure token:', error);
-    // Return hardcoded token as last resort
-    return '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';
+    // No valid token available
+    return null;
   }
 };
 
@@ -160,6 +159,9 @@ export const getSecureToken = async (): Promise<string | null> => {
 export const initializeSecureToken = async (): Promise<void> => {
   try {
     console.log('Initializing secure token...');
+    
+    // Clear any old stored token parts first
+    await clearSecureToken();
     
     // Always ensure we have a token available
     const existingToken = await getSecureToken();
