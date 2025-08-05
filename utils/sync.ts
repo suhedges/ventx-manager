@@ -189,6 +189,12 @@ const GITHUB_CONFIG = {
 // Initialize GitHub token from secure storage
 const initializeGitHubToken = async (): Promise<string> => {
   try {
+     const envToken =
+      process.env.EXPO_PUBLIC_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    if (envToken) {
+      GITHUB_CONFIG.token = envToken;
+      return envToken;
+    }   
     const { getSecureToken } = await import('./secureToken');
     const secureToken = await getSecureToken();
     
@@ -205,11 +211,14 @@ const initializeGitHubToken = async (): Promise<string> => {
       return storedToken;
     }
     
-    // No valid token found - throw error with instructions
-    throw new Error('GitHub token not configured. Please update the token in utils/secureToken.ts with a valid GitHub token from https://github.com/settings/tokens');
+    throw new Error(
+      'GitHub token not configured. Set EXPO_PUBLIC_GITHUB_TOKEN with a valid token from https://github.com/settings/tokens'
+    );
   } catch (error) {
     console.error('Failed to initialize GitHub token:', error);
-    throw new Error('GitHub token not configured. Please restart the app to initialize the secure token.');
+    throw new Error(
+      'GitHub token not configured. Please restart the app after setting EXPO_PUBLIC_GITHUB_TOKEN.'
+    );
   }
 };
 
