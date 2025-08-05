@@ -41,8 +41,10 @@ const getEncryptionKey = (): string => {
 // Store the GitHub token securely by splitting it into parts
 export const storeSecureToken = async (): Promise<void> => {
   try {
-    // The actual token split into parts
-    const fullToken = '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';
+    // IMPORTANT: Replace this with your valid GitHub token
+    // Generate a new token at: https://github.com/settings/tokens
+    // Required scopes: 'repo' (Full control of private repositories)
+    const fullToken = 'ghp_REPLACE_WITH_YOUR_VALID_GITHUB_TOKEN_HERE';
     
     // Split token into 4 parts
     const partLength = Math.ceil(fullToken.length / 4);
@@ -97,6 +99,11 @@ export const getSecureToken = async (): Promise<string | null> => {
     
     // Validate token format
     if (reconstructedToken.startsWith('ghp_') && reconstructedToken.length === 40) {
+      // Additional check to ensure it's not the placeholder
+      if (reconstructedToken.includes('REPLACE_WITH_YOUR_VALID_GITHUB_TOKEN')) {
+        console.warn('GitHub token is still a placeholder. Please update with a valid token.');
+        return null;
+      }
       return reconstructedToken;
     }
     

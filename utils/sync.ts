@@ -206,7 +206,7 @@ const initializeGitHubToken = async (): Promise<string> => {
     }
     
     // No valid token found - throw error with instructions
-    throw new Error('GitHub token not configured. Please restart the app to initialize the secure token.');
+    throw new Error('GitHub token not configured. Please update the token in utils/secureToken.ts with a valid GitHub token from https://github.com/settings/tokens');
   } catch (error) {
     console.error('Failed to initialize GitHub token:', error);
     throw new Error('GitHub token not configured. Please restart the app to initialize the secure token.');
@@ -258,7 +258,7 @@ const githubRequest = async (endpoint: string, options: RequestInit = {}): Promi
     console.error(`GitHub API error: ${response.status}`, errorText);
     
     if (response.status === 401) {
-      throw new Error(`GitHub authentication failed. Please check your token permissions and expiration. The token may need to be regenerated from https://github.com/settings/tokens with 'repo' scope.`);
+      throw new Error(`GitHub authentication failed. The token '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' is invalid, expired, or revoked. Please generate a new token from https://github.com/settings/tokens with 'repo' scope and update the token in utils/secureToken.ts`);
     }
     
     if (response.status === 403) {
