@@ -5,14 +5,31 @@
       "name": "Main Warehouse",
       "ownerId": "admin-sethh",
       "createdAt": 1754425373750,
-      "updatedAt": 1754425373750
+      "updatedAt": 1754426419753,
+      "softDeleted": true
     },
     {
       "id": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
       "name": "test",
       "ownerId": "admin-sethh",
       "createdAt": 1754425382126,
-      "updatedAt": 1754425382126
+      "updatedAt": 1754426421238,
+      "softDeleted": true
+    },
+    {
+      "id": "a875541b-0efe-414e-b52e-47191921cc5e",
+      "name": "Main Warehouse",
+      "ownerId": "sethuriahhedges@gmail.com",
+      "createdAt": 1754426331874,
+      "updatedAt": 1754426424027,
+      "softDeleted": true
+    },
+    {
+      "id": "74bc6782-367a-4142-89ff-1382b23dec1e",
+      "name": "TEST",
+      "ownerId": "sethuriahhedges@gmail.com",
+      "createdAt": 1754426429629,
+      "updatedAt": 1754426429629
     }
   ],
   "items": {
@@ -29,7 +46,9 @@
         "max": 2,
         "bin": "b987"
       }
-    ]
+    ],
+    "a875541b-0efe-414e-b52e-47191921cc5e": [],
+    "74bc6782-367a-4142-89ff-1382b23dec1e": []
   },
   "operations": {
     "11bfd357-e5bf-4735-b94c-3b1e569e74bb": [],
@@ -116,12 +135,16 @@
         "userId": "admin-sethh",
         "synced": true
       }
-    ]
+    ],
+    "a875541b-0efe-414e-b52e-47191921cc5e": [],
+    "74bc6782-367a-4142-89ff-1382b23dec1e": []
   },
   "conflicts": {
     "11bfd357-e5bf-4735-b94c-3b1e569e74bb": [],
-    "f6339cb4-f6b1-447f-96d6-43a6d884abfa": []
+    "f6339cb4-f6b1-447f-96d6-43a6d884abfa": [],
+    "a875541b-0efe-414e-b52e-47191921cc5e": [],
+    "74bc6782-367a-4142-89ff-1382b23dec1e": []
   },
-  "lastSync": 1754426020127,
-  "siteId": "c2b67313-41fc-4d86-b759-54a23b054b1c"
+  "lastSync": 1754426431874,
+  "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c"
 }
