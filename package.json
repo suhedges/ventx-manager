@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "bunx rork start -p w8qltp5qooovp2rj1caq8 --tunnel",
-    "start-web": "bunx rork start -p w8qltp5qooovp2rj1caq8 --web --tunnel",
+    "start-web": "bunx rork start --web --tunnel --hot=false",
     "start-web-dev": "DEBUG=expo* bunx rork start -p w8qltp5qooovp2rj1caq8 --web --tunnel"
   },
   "dependencies": {
