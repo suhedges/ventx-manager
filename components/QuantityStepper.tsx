@@ -202,5 +202,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     marginHorizontal: 8,
     borderRadius: 8,
+    backgroundColor: '#fff',
+    color: '#000',
   },
 });

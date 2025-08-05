@@ -107,7 +107,6 @@ export default function ScannerScreen() {
         await adjustQuantity(foundItem.internal, delta);
         // Update the found item locally to reflect the change
         setFoundItem(prev => prev ? { ...prev, qty: newValue } : null);
-        Alert.alert('Success', `Quantity updated to ${newValue}`);
       } catch (error) {
         console.error('Failed to update quantity:', error);
         Alert.alert('Error', 'Failed to update quantity. Please try again.');
@@ -348,17 +347,20 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
   detailLabel: {
     color: '#ccc',
     fontSize: 14,
     fontWeight: '500',
+    width: 70,
   },
   detailValue: {
     color: '#fff',
     fontSize: 14,
+    flex: 1,
+    marginLeft: 8,
   },
   quantitySection: {
     width: '100%',
