@@ -189,12 +189,14 @@ const GITHUB_CONFIG = {
 // Initialize GitHub token from secure storage
 const initializeGitHubToken = async (): Promise<string> => {
   try {
-     const envToken =
-      process.env.EXPO_PUBLIC_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    // First try environment variables
+    const envToken = process.env.EXPO_PUBLIC_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
     if (envToken) {
       GITHUB_CONFIG.token = envToken;
       return envToken;
-    }   
+    }
+    
+    // Then try secure token storage (manually entered tokens)
     const { getSecureToken } = await import('./secureToken');
     const secureToken = await getSecureToken();
     
@@ -212,27 +214,39 @@ const initializeGitHubToken = async (): Promise<string> => {
     }
     
     throw new Error(
-      'GitHub token not configured. Set EXPO_PUBLIC_GITHUB_TOKEN with a valid token from https://github.com/settings/tokens'
+      'GitHub token not configured. Please enter your GitHub token in Settings.'
     );
   } catch (error) {
     console.error('Failed to initialize GitHub token:', error);
     throw new Error(
-      'GitHub token not configured. Please restart the app after setting EXPO_PUBLIC_GITHUB_TOKEN.'
+      'GitHub token not configured. Please enter your GitHub token in Settings.'
     );
   }
 };
 
-// Function to update GitHub token (for manual override if needed)
+// Function to update GitHub token (for manual entry)
 export const updateGitHubToken = async (newToken: string): Promise<void> => {
-  GITHUB_CONFIG.token = newToken;
-  
-  // Save to regular storage (secure token is auto-managed)
   try {
+    // Validate token format
+    if (!newToken || !newToken.startsWith('ghp_')) {
+      throw new Error('Invalid GitHub token format. Token should start with "ghp_".');
+    }
+    
+    // Update the in-memory token
+    GITHUB_CONFIG.token = newToken;
+    
+    // Store securely using the secure token system
+    const { storeSecureToken } = await import('./secureToken');
+    await storeSecureToken(newToken);
+    
+    // Also save to regular storage for backward compatibility
     const { saveGitHubToken } = await import('./storage');
     await saveGitHubToken(newToken);
-    console.log('GitHub token updated successfully');
+    
+    console.log('GitHub token updated and stored securely');
   } catch (error) {
-    console.error('Failed to save GitHub token:', error);
+    console.error('Failed to update GitHub token:', error);
+    throw error;
   }
 };
 
@@ -267,7 +281,7 @@ const githubRequest = async (endpoint: string, options: RequestInit = {}): Promi
     console.error(`GitHub API error: ${response.status}`, errorText);
     
     if (response.status === 401) {
-      throw new Error(`GitHub authentication failed. Please check your token permissions and expiration. The token may need to be regenerated from https://github.com/settings/tokens with 'repo' scope.`);
+      throw new Error(`GitHub authentication failed. The token '${GITHUB_CONFIG.token.substring(0, 8)}...' is invalid, expired, or revoked. Please generate a new token from https://github.com/settings/tokens with 'repo' scope and update the token in Settings.`);
     }
     
     if (response.status === 403) {

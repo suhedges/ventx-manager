@@ -129,11 +129,17 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       setLastSyncError(errorMessage);
       
       // Show user-friendly error for GitHub authentication issues
-      if (errorMessage.includes('GitHub authentication failed')) {
+      if (errorMessage.includes('GitHub authentication failed') || errorMessage.includes('GitHub token not configured')) {
         Alert.alert(
-          'Sync Failed',
-          'GitHub authentication failed. Please update your GitHub token in Settings.',
-          [{ text: 'OK' }]
+          'GitHub Token Required',
+          'Please configure your GitHub token in Settings to enable sync functionality.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => {
+              // In a real app, you might navigate to settings here
+              console.log('Navigate to settings');
+            }}
+          ]
         );
       } else {
         Alert.alert(

@@ -69,13 +69,13 @@ const getEnvToken = (): string | undefined => {
 };
 
 // Store the GitHub token securely by splitting it into parts
-export const storeSecureToken = async (): Promise<void> => {
+export const storeSecureToken = async (token?: string): Promise<void> => {
   try {
-    const fullToken = getEnvToken();
+    const fullToken = token || getEnvToken();
 
     if (!fullToken) {
-      console.log('No GitHub token found in environment variables.');
-      console.log('Please set EXPO_PUBLIC_GITHUB_TOKEN or GITHUB_TOKEN environment variable.');
+      console.log('No GitHub token provided.');
+      console.log('Please provide a token or set EXPO_PUBLIC_GITHUB_TOKEN environment variable.');
       console.log('Generate a new token at: https://github.com/settings/tokens');
       return;
     }
@@ -146,11 +146,9 @@ export const getSecureToken = async (): Promise<string | null> => {
     }
     
     // No valid token available
-    console.log('No valid token found. Please set up a GitHub token.');
     return null;
   } catch (error) {
     console.error('Failed to retrieve secure token:', error);
-    // No valid token available
     return null;
   }
 };
@@ -160,14 +158,10 @@ export const initializeSecureToken = async (): Promise<void> => {
   try {
     console.log('Initializing secure token...');
     
-    // Clear any old stored token parts first
-    await clearSecureToken();
-    
-    // Always ensure we have a token available
+    // Check if we have a token available (from env or stored)
     const existingToken = await getSecureToken();
     if (!existingToken) {
-      console.log('No existing token found, storing new one');
-      await storeSecureToken();
+      console.log('No existing token found. User will need to enter token manually.');
     } else {
       console.log('Token already available');
     }
@@ -189,5 +183,16 @@ export const clearSecureToken = async (): Promise<void> => {
     console.log('Secure token cleared');
   } catch (error) {
     console.error('Failed to clear secure token:', error);
+  }
+};
+
+// Check if a token is currently stored
+export const hasStoredToken = async (): Promise<boolean> => {
+  try {
+    const token = await getSecureToken();
+    return token !== null && token.length > 0;
+  } catch (error) {
+    console.error('Failed to check stored token:', error);
+    return false;
   }
 };

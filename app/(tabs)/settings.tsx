@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, Pressable, Alert, ScrollView, TextInput } from 'react-native';
-import { Database, HelpCircle, Key, Save } from 'lucide-react-native';
+import { Database, HelpCircle, Key, Save, CheckCircle, XCircle } from 'lucide-react-native';
 import SyncStatus from '@/components/SyncStatus';
 import { updateGitHubToken } from '@/utils/sync';
+import { hasStoredToken, clearSecureToken } from '@/utils/secureToken';
 
 export default function SettingsScreen() {
   const [offlineMode, setOfflineMode] = useState(false);
@@ -10,6 +11,25 @@ export default function SettingsScreen() {
   const [autoSync, setAutoSync] = useState(true);
   const [githubToken, setGithubToken] = useState('');
   const [showTokenInput, setShowTokenInput] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Check if token is stored on component mount
+  useEffect(() => {
+    const checkToken = async () => {
+      try {
+        const tokenExists = await hasStoredToken();
+        setHasToken(tokenExists);
+      } catch (error) {
+        console.error('Failed to check token status:', error);
+        setHasToken(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkToken();
+  }, []);
   
   const handleClearData = () => {
     Alert.alert(
@@ -52,34 +72,74 @@ export default function SettingsScreen() {
       await updateGitHubToken(githubToken.trim());
       setShowTokenInput(false);
       setGithubToken('');
+      setHasToken(true);
       
       Alert.alert(
         'Success',
-        'GitHub token has been updated successfully. You can now sync with GitHub.',
+        'GitHub token has been saved securely. You can now sync with GitHub.',
         [{ text: 'OK' }]
       );
     } catch (error) {
       console.error('Failed to update GitHub token:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save the GitHub token. Please try again.';
       Alert.alert(
         'Error',
-        'Failed to save the GitHub token. Please try again.',
+        errorMessage,
         [{ text: 'OK' }]
       );
     }
   };
   
   const handleConfigureGitHub = () => {
-    Alert.alert(
-      'Configure GitHub Sync',
-      'To sync with GitHub, you need a Personal Access Token with "repo" permissions.\n\n1. Go to https://github.com/settings/tokens\n2. Click "Generate new token (classic)"\n3. Select "repo" scope\n4. Copy the token and paste it below',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Enter Token',
-          onPress: () => setShowTokenInput(true),
-        },
-      ]
-    );
+    if (hasToken) {
+      Alert.alert(
+        'GitHub Token Configured',
+        'A GitHub token is already saved. Would you like to update it or remove it?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Update Token',
+            onPress: () => setShowTokenInput(true),
+          },
+          {
+            text: 'Remove Token',
+            style: 'destructive',
+            onPress: handleRemoveToken,
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Configure GitHub Sync',
+        'To sync with GitHub, you need a Personal Access Token with "repo" permissions.\n\n1. Go to https://github.com/settings/tokens\n2. Click "Generate new token (classic)"\n3. Select "repo" scope\n4. Copy the token and paste it below',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Enter Token',
+            onPress: () => setShowTokenInput(true),
+          },
+        ]
+      );
+    }
+  };
+  
+  const handleRemoveToken = async () => {
+    try {
+      await clearSecureToken();
+      setHasToken(false);
+      Alert.alert(
+        'Token Removed',
+        'GitHub token has been removed. You will need to enter a new token to sync.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Failed to remove token:', error);
+      Alert.alert(
+        'Error',
+        'Failed to remove the GitHub token. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
   
   return (
@@ -147,6 +207,24 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>GitHub Sync</Text>
           
+          <View style={styles.tokenStatusContainer}>
+            <View style={styles.tokenStatusRow}>
+              <View style={styles.tokenStatusInfo}>
+                <Text style={styles.tokenStatusLabel}>GitHub Token Status</Text>
+                <Text style={styles.tokenStatusDescription}>
+                  {isLoading ? 'Checking...' : hasToken ? 'Token configured and ready' : 'No token configured'}
+                </Text>
+              </View>
+              {!isLoading && (
+                hasToken ? (
+                  <CheckCircle size={20} color="#4caf50" />
+                ) : (
+                  <XCircle size={20} color="#f44336" />
+                )
+              )}
+            </View>
+          </View>
+          
           <Pressable
             style={styles.actionButton}
             onPress={handleConfigureGitHub}
@@ -155,14 +233,14 @@ export default function SettingsScreen() {
           >
             <Key size={20} color="#1a3a6a" />
             <Text style={styles.actionButtonText}>
-              Configure GitHub Token
+              {hasToken ? 'Manage GitHub Token' : 'Configure GitHub Token'}
             </Text>
           </Pressable>
           
           {showTokenInput && (
             <View style={styles.tokenInputContainer}>
               <Text style={styles.tokenInputLabel}>
-                Enter your GitHub Personal Access Token:
+                {hasToken ? 'Update your GitHub Personal Access Token:' : 'Enter your GitHub Personal Access Token:'}
               </Text>
               <Text style={styles.tokenInstructions}>
                 1. Go to https://github.com/settings/tokens{"\n"}
@@ -362,5 +440,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '500',
+  },
+  tokenStatusContainer: {
+    marginBottom: 8,
+  },
+  tokenStatusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  tokenStatusInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  tokenStatusLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  tokenStatusDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
   },
 });
