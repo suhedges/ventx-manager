@@ -53,8 +53,8 @@
         "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
         "internal": "Test",
         "custom": "Testt",
-        "qty": 1,
-        "lastTs": 1754426473173,
+        "qty": 2,
+        "lastTs": 1754426480733,
         "lastSiteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
         "upc": "078742295794",
         "min": 1,
@@ -232,6 +232,18 @@
         "ts": 1754426473173,
         "userId": "sethuriahhedges@gmail.com",
         "synced": true
+      },
+      {
+        "opId": "ec2da7e4-6e3f-493b-b821-4ffb8027bcaf",
+        "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
+        "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
+        "internal": "Test",
+        "type": "adjustQty",
+        "field": "qty",
+        "delta": 1,
+        "ts": 1754426480733,
+        "userId": "sethuriahhedges@gmail.com",
+        "synced": true
       }
     ]
   },
@@ -241,6 +253,6 @@
     "a875541b-0efe-414e-b52e-47191921cc5e": [],
     "74bc6782-367a-4142-89ff-1382b23dec1e": []
   },
-  "lastSync": 1754426473509,
+  "lastSync": 1754426480934,
   "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c"
 }
