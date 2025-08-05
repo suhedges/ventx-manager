@@ -1,13 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, ScrollView } from 'react-native';
-import { FileText, Upload } from 'lucide-react-native';
+import { View, Text, StyleSheet, Pressable, Alert, ScrollView, Platform } from 'react-native';
+import { FileText, Upload, TrendingUp } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useWarehouse } from '@/context/WarehouseContext';
 import WarehouseSelector from '@/components/WarehouseSelector';
 import SyncStatus from '@/components/SyncStatus';
+import { filterItemsForExport, convertItemsToCSV, downloadCSV, getExportFilename, ExportMode } from '@/utils/csvExport';
 
 export default function ImportExportScreen() {
-  const { currentWarehouse, filteredItems } = useWarehouse();
+  const { currentWarehouse, items } = useWarehouse();
   
   const handleImport = () => {
     if (!currentWarehouse) {
@@ -18,36 +19,63 @@ export default function ImportExportScreen() {
     router.push('/import' as any);
   };
   
-  const handleExport = (mode: 'all' | 'belowMin' | 'belowMax' | 'currentView') => {
+  const handleExport = (mode: ExportMode) => {
     if (!currentWarehouse) {
       Alert.alert('No Warehouse Selected', 'Please select a warehouse first.');
       return;
     }
     
-    // In a real app, this would trigger a file download
-    // For now, just show a success message
-    Alert.alert(
-      'Export Successful',
-      `Exported ${getExportCount(mode)} items as CSV.`,
-      [{ text: 'OK' }]
-    );
+    try {
+      // Get all items (not just filtered ones) for export
+      const allItems = items.filter(item => !item.deleted);
+      const itemsToExport = filterItemsForExport(allItems, mode);
+      
+      if (itemsToExport.length === 0) {
+        Alert.alert('No Items to Export', `No items found for ${mode} export.`);
+        return;
+      }
+      
+      const csvContent = convertItemsToCSV(itemsToExport);
+      const filename = getExportFilename(mode, currentWarehouse.name);
+      
+      if (Platform.OS === 'web') {
+        downloadCSV(csvContent, filename);
+        Alert.alert(
+          'Export Successful',
+          `Exported ${itemsToExport.length} items as ${filename}`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        // For mobile, show the CSV content in an alert for now
+        // In a production app, you would use expo-sharing to share the file
+        Alert.alert(
+          'Export Ready',
+          `CSV content ready with ${itemsToExport.length} items. In a production app, this would be shared as a file.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'View Content', 
+              onPress: () => {
+                console.log('CSV Content:', csvContent);
+                Alert.alert('CSV Content', csvContent.substring(0, 500) + (csvContent.length > 500 ? '...' : ''));
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      Alert.alert('Export Failed', 'An error occurred while exporting the data.');
+    }
   };
   
-  const getExportCount = (mode: 'all' | 'belowMin' | 'belowMax' | 'currentView'): number => {
+  const getExportCount = (mode: ExportMode): number => {
     if (!currentWarehouse) return 0;
     
-    switch (mode) {
-      case 'all':
-        return filteredItems.length;
-      case 'belowMin':
-        return filteredItems.filter(item => item.min !== undefined && item.qty < item.min).length;
-      case 'belowMax':
-        return filteredItems.filter(item => item.max !== undefined && item.qty < item.max).length;
-      case 'currentView':
-        return filteredItems.length;
-      default:
-        return 0;
-    }
+    // Use all items (not just filtered ones) for export counts
+    const allItems = items.filter(item => !item.deleted);
+    const itemsToExport = filterItemsForExport(allItems, mode);
+    return itemsToExport.length;
   };
   
   return (
@@ -118,13 +146,13 @@ export default function ImportExportScreen() {
             
             <Pressable
               style={styles.exportButton}
-              onPress={() => handleExport('currentView')}
-              testID="export-current-view-button"
-              accessibilityLabel="Export current view"
+              onPress={() => handleExport('overstock')}
+              testID="export-overstock-button"
+              accessibilityLabel="Export overstock items"
             >
-              <FileText size={20} color="#4caf50" />
-              <Text style={styles.exportButtonText}>Current View</Text>
-              <Text style={styles.exportCount}>{getExportCount('currentView')}</Text>
+              <TrendingUp size={20} color="#9c27b0" />
+              <Text style={styles.exportButtonText}>Overstock</Text>
+              <Text style={styles.exportCount}>{getExportCount('overstock')}</Text>
             </Pressable>
           </View>
         </View>
