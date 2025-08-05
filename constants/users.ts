@@ -12,6 +12,11 @@ export const AUTHORIZED_USERS: Array<{
     password: 'Knight_88@',
     role: 'admin',
   },
+  {
+    email: 'jaredh@tristate-bearing.com',
+    password: 'Secret123',
+    role: 'admin',
+  },
   // Add new users here:
   // {
   //   email: 'newuser@example.com',
