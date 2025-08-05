@@ -1,0 +1,127 @@
+{
+  "warehouses": [
+    {
+      "id": "11bfd357-e5bf-4735-b94c-3b1e569e74bb",
+      "name": "Main Warehouse",
+      "ownerId": "admin-sethh",
+      "createdAt": 1754425373750,
+      "updatedAt": 1754425373750
+    },
+    {
+      "id": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
+      "name": "test",
+      "ownerId": "admin-sethh",
+      "createdAt": 1754425382126,
+      "updatedAt": 1754425382126
+    }
+  ],
+  "items": {
+    "11bfd357-e5bf-4735-b94c-3b1e569e74bb": [],
+    "f6339cb4-f6b1-447f-96d6-43a6d884abfa": [
+      {
+        "whId": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
+        "internal": "trst",
+        "custom": "ljhuy",
+        "qty": 2,
+        "lastTs": 1754426019592,
+        "lastSiteId": "c2b67313-41fc-4d86-b759-54a23b054b1c",
+        "min": 1,
+        "max": 2,
+        "bin": "b987"
+      }
+    ]
+  },
+  "operations": {
+    "11bfd357-e5bf-4735-b94c-3b1e569e74bb": [],
+    "f6339cb4-f6b1-447f-96d6-43a6d884abfa": [
+      {
+        "opId": "1b23a8bc-4d33-4d19-a910-37e902bf5ab0",
+        "siteId": "c2b67313-41fc-4d86-b759-54a23b054b1c",
+        "whId": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
+        "internal": "trst",
+        "type": "createItem",
+        "ts": 1754425413325,
+        "userId": "admin-sethh",
+        "synced": true
+      },
+      {
+        "opId": "8e1d1da1-d0ae-4a45-a2d1-80389ac09440",
+        "siteId": "c2b67313-41fc-4d86-b759-54a23b054b1c",
+        "whId": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
+        "internal": "trst",
+        "type": "setField",
+        "field": "custom",
+        "value": "ljhuy",
+        "ts": 1754425413352,
+        "userId": "admin-sethh",
+        "synced": true
+      },
+      {
+        "opId": "dd38c4ba-3410-42b9-b784-1fa153d5a773",
+        "siteId": "c2b67313-41fc-4d86-b759-54a23b054b1c",
+        "whId": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
+        "internal": "trst",
+        "type": "setField",
+        "field": "min",
+        "value": 1,
+        "ts": 1754425413396,
+        "userId": "admin-sethh",
+        "synced": true
+      },
+      {
+        "opId": "69de3c3f-9bdb-4ea1-8a0e-909eae071bb2",
+        "siteId": "c2b67313-41fc-4d86-b759-54a23b054b1c",
+        "whId": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
+        "internal": "trst",
+        "type": "setField",
+        "field": "max",
+        "value": 2,
+        "ts": 1754425413436,
+        "userId": "admin-sethh",
+        "synced": true
+      },
+      {
+        "opId": "bbfc44d3-e434-4583-ae0b-130cf990114d",
+        "siteId": "c2b67313-41fc-4d86-b759-54a23b054b1c",
+        "whId": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
+        "internal": "trst",
+        "type": "setField",
+        "field": "bin",
+        "value": "b987",
+        "ts": 1754425413476,
+        "userId": "admin-sethh",
+        "synced": true
+      },
+      {
+        "opId": "757475a0-ece5-4699-b580-5a65e3a330d6",
+        "siteId": "c2b67313-41fc-4d86-b759-54a23b054b1c",
+        "whId": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
+        "internal": "trst",
+        "type": "setField",
+        "field": "qty",
+        "value": 1,
+        "ts": 1754425413514,
+        "userId": "admin-sethh",
+        "synced": true
+      },
+      {
+        "opId": "1df17554-f303-4b38-ba2a-44779744fda4",
+        "siteId": "c2b67313-41fc-4d86-b759-54a23b054b1c",
+        "whId": "f6339cb4-f6b1-447f-96d6-43a6d884abfa",
+        "internal": "trst",
+        "type": "adjustQty",
+        "field": "qty",
+        "delta": 1,
+        "ts": 1754426019592,
+        "userId": "admin-sethh",
+        "synced": true
+      }
+    ]
+  },
+  "conflicts": {
+    "11bfd357-e5bf-4735-b94c-3b1e569e74bb": [],
+    "f6339cb4-f6b1-447f-96d6-43a6d884abfa": []
+  },
+  "lastSync": 1754426020127,
+  "siteId": "c2b67313-41fc-4d86-b759-54a23b054b1c"
+}
