@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log('Attempting login for:', email);
       
       // Check for permanent admin user
       if (email === 'sethh@tristate-bearing.com' && password === 'Knight_88@') {
@@ -50,12 +51,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Save user to storage
         await saveCurrentUser(adminUser);
         setUser(adminUser);
+        console.log('Admin login successful, navigating to tabs');
         
+        // Navigate to main app
+        router.replace('/(tabs)');
         return true;
       }
       
       // Mock authentication for other users (replace with actual API call)
       if (password.length < 6) {
+        console.log('Login failed: password too short');
         return false;
       }
       
@@ -70,7 +75,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save user to storage
       await saveCurrentUser(mockUser);
       setUser(mockUser);
+      console.log('User login successful, navigating to tabs');
       
+      // Navigate to main app
+      router.replace('/(tabs)');
       return true;
     } catch (error) {
       console.error('Login failed:', error);
@@ -85,6 +93,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       await saveCurrentUser(null);
       setUser(null);
+      console.log('User logged out, navigating to login');
+      
+      // Navigate to login screen
+      router.replace('/(auth)/login');
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
@@ -100,9 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log('Attempting registration for:', email);
       
       // Mock registration (replace with actual API call)
       if (password.length < 6) {
+        console.log('Registration failed: password too short');
         return false;
       }
       
@@ -117,7 +131,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save user to storage
       await saveCurrentUser(mockUser);
       setUser(mockUser);
+      console.log('Registration successful, navigating to tabs');
       
+      // Navigate to main app
+      router.replace('/(tabs)');
       return true;
     } catch (error) {
       console.error('Registration failed:', error);

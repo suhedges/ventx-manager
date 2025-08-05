@@ -30,10 +30,14 @@ export default function LoginScreen() {
       return;
     }
     
+    console.log('Login button pressed, attempting login...');
     const success = await login(email, password);
     
     if (!success) {
+      console.log('Login failed, showing error alert');
       Alert.alert('Login Failed', 'Invalid email or password');
+    } else {
+      console.log('Login successful from login screen');
     }
   };
   
