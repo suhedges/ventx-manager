@@ -2,10 +2,15 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 // GitHub token is split into parts for security
+// REPLACE WITH YOUR NEW TOKEN: Split your new token into 3 parts
+// Example: if token is 'ghp_abcdefghijklmnopqrstuvwxyz123456789'
+// part1: 'ghp_abcdefghijklmn'
+// part2: 'opqrstuvwxyz1234'
+// part3: '56789'
 const TOKEN_PARTS = {
-  part1: 'ghp_yZ7ywIClxrDaAs',
-  part2: 'ZNkUNWqQuIIiYHw',
-  part3: 'H4YQEou'
+  part1: 'REPLACE_WITH_FIRST_PART_OF_NEW_TOKEN',
+  part2: 'REPLACE_WITH_SECOND_PART_OF_NEW_TOKEN',
+  part3: 'REPLACE_WITH_THIRD_PART_OF_NEW_TOKEN'
 };
 
 const TOKEN_KEY = 'github_token';
