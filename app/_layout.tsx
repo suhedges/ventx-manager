@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
+import { View, Text, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "@/context/AuthContext";
 import { SyncProvider } from "@/context/SyncContext";
@@ -10,6 +11,7 @@ import { WarehouseProvider } from "@/context/WarehouseContext";
 import { SyncHookProvider } from "@/context/SyncHook";
 import { StatusBar } from "expo-status-bar";
 import { initializeSecureToken } from "@/utils/secureToken";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -37,36 +39,82 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [isInitialized, setIsInitialized] = React.useState(false);
+  const [initError, setInitError] = React.useState<string | null>(null);
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Initialize secure GitHub token
-        await initializeSecureToken();
-        console.log('App initialization completed');
+        console.log('Starting app initialization...');
+        
+        // Initialize secure GitHub token with timeout
+        const initPromise = initializeSecureToken();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Initialization timeout')), 10000)
+        );
+        
+        await Promise.race([initPromise, timeoutPromise]);
+        console.log('App initialization completed successfully');
+        setIsInitialized(true);
       } catch (error) {
         console.error('App initialization failed:', error);
+        setInitError(error instanceof Error ? error.message : 'Unknown initialization error');
+        // Still set as initialized to allow app to continue
+        setIsInitialized(true);
       } finally {
-        SplashScreen.hideAsync();
+        try {
+          await SplashScreen.hideAsync();
+        } catch (splashError) {
+          console.error('Failed to hide splash screen:', splashError);
+        }
       }
     };
     
     initializeApp();
   }, []);
 
+  if (!isInitialized) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a3a6a' }}>
+        <ActivityIndicator size="large" color="#fff" />
+        <Text style={{ color: '#fff', marginTop: 16 }}>Initializing app...</Text>
+      </View>
+    );
+  }
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <SyncHookProvider>
-        <AuthProvider>
-          <WarehouseProvider>
-            <SyncProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <StatusBar style="light" />
-                <RootLayoutNav />
-              </GestureHandlerRootView>
-            </SyncProvider>
-          </WarehouseProvider>
-        </AuthProvider>
-      </SyncHookProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <SyncHookProvider>
+            <ErrorBoundary>
+              <AuthProvider>
+                <ErrorBoundary>
+                  <WarehouseProvider>
+                    <ErrorBoundary>
+                      <SyncProvider>
+                        <GestureHandlerRootView style={{ flex: 1 }}>
+                          <StatusBar style="light" />
+                          {initError && (
+                            <View style={{ backgroundColor: '#ff6b6b', padding: 8 }}>
+                              <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
+                                Init Warning: {initError}
+                              </Text>
+                            </View>
+                          )}
+                          <ErrorBoundary>
+                            <RootLayoutNav />
+                          </ErrorBoundary>
+                        </GestureHandlerRootView>
+                      </SyncProvider>
+                    </ErrorBoundary>
+                  </WarehouseProvider>
+                </ErrorBoundary>
+              </AuthProvider>
+            </ErrorBoundary>
+          </SyncHookProvider>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

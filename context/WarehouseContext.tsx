@@ -46,27 +46,48 @@ export function WarehouseProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadWarehouses = async () => {
       try {
-        // First load local warehouses
+        console.log('Loading warehouses for user:', user?.email);
+        
+        // Load local warehouses only during startup
         let storedWarehouses = await getWarehouses();
+        console.log('Loaded local warehouses:', storedWarehouses.length);
         setWarehouses(storedWarehouses);
         
-        // Try to load and merge warehouses from GitHub
-        try {
-          const githubResult = await loadWarehousesFromGitHub();
-          if (githubResult.success && githubResult.warehouses.length > 0) {
-            // Use the merged warehouses from GitHub
-            setWarehouses(githubResult.warehouses);
-            storedWarehouses = githubResult.warehouses;
-            console.log('Successfully loaded warehouses from GitHub');
-          }
-        } catch (error) {
-          console.warn('Failed to load warehouses from GitHub, using local only:', error);
+        // If no warehouses exist, create a default one
+        if (storedWarehouses.length === 0 && user) {
+          console.log('No warehouses found, creating default warehouse');
+          const defaultWarehouse = await createWarehouse('Main Warehouse');
+          storedWarehouses = [defaultWarehouse];
         }
         
         // If there's at least one warehouse, select the first one
         if (storedWarehouses.length > 0) {
+          console.log('Selecting first warehouse:', storedWarehouses[0].name);
           await selectWarehouse(storedWarehouses[0].id);
         }
+        
+        // Load from GitHub in the background (non-blocking)
+        setTimeout(async () => {
+          try {
+            console.log('Loading warehouses from GitHub in background...');
+            const githubResult = await loadWarehousesFromGitHub();
+            if (githubResult.success && githubResult.warehouses.length > 0) {
+              console.log('Successfully loaded warehouses from GitHub:', githubResult.warehouses.length);
+              setWarehouses(githubResult.warehouses);
+              
+              // Re-select current warehouse if it still exists
+              if (currentWarehouse) {
+                const stillExists = githubResult.warehouses.find(w => w.id === currentWarehouse.id);
+                if (stillExists) {
+                  await selectWarehouse(currentWarehouse.id);
+                }
+              }
+            }
+          } catch (error) {
+            console.warn('Background GitHub warehouse load failed:', error);
+          }
+        }, 1000);
+        
       } catch (error) {
         console.error('Failed to load warehouses:', error);
       } finally {
@@ -76,6 +97,8 @@ export function WarehouseProvider({ children }: { children: React.ReactNode }) {
     
     if (user) {
       loadWarehouses();
+    } else {
+      setIsLoading(false);
     }
   }, [user]);
   
