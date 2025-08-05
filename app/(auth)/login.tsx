@@ -11,7 +11,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { Link } from 'expo-router';
+
 import { useAuth } from '@/context/AuthContext';
 
 export default function LoginScreen() {
@@ -96,14 +96,7 @@ export default function LoginScreen() {
             )}
           </Pressable>
           
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>Don&apos;t have an account?</Text>
-            <Link href="/(auth)/register" asChild>
-              <Pressable testID="register-link" accessibilityLabel="Register link">
-                <Text style={styles.registerLink}>Register</Text>
-              </Pressable>
-            </Link>
-          </View>
+
         </View>
         
         <View style={styles.footer}>
@@ -174,21 +167,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  registerText: {
-    color: '#666',
-    fontSize: 16,
-  },
-  registerLink: {
-    color: '#1a3a6a',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 5,
-  },
+
   footer: {
     marginTop: 40,
     alignItems: 'center',

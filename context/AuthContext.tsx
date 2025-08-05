@@ -2,13 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { getCurrentUser, saveCurrentUser } from '@/utils/storage';
 import { router } from 'expo-router';
+import { AUTHORIZED_USERS } from '@/constants/users';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  register: (email: string, password: string, role: User['role']) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,49 +33,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
   }, []);
 
-  // Mock login function (in a real app, this would authenticate with a server)
+  // Login function using hardcoded authorized users
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       console.log('Attempting login for:', email);
       
-      // Check for permanent admin user
-      if (email === 'sethh@tristate-bearing.com' && password === 'Knight_88@') {
-        const adminUser: User = {
-          id: 'admin-sethh',
-          email: 'sethh@tristate-bearing.com',
-          role: 'admin',
-          createdAt: Date.now(),
-        };
-        
-        // Save user to storage
-        await saveCurrentUser(adminUser);
-        setUser(adminUser);
-        console.log('Admin login successful, navigating to tabs');
-        
-        // Navigate to main app
-        router.replace('/(tabs)');
-        return true;
-      }
+      // Find user in authorized users list
+      const authorizedUser = AUTHORIZED_USERS.find(
+        user => user.email === email && user.password === password
+      );
       
-      // Mock authentication for other users (replace with actual API call)
-      if (password.length < 6) {
-        console.log('Login failed: password too short');
+      if (!authorizedUser) {
+        console.log('Login failed: invalid credentials');
         return false;
       }
       
-      // Create mock user
-      const mockUser: User = {
-        id: email,
-        email,
-        role: 'manager',
+      // Create user object
+      const user: User = {
+        id: authorizedUser.email,
+        email: authorizedUser.email,
+        role: authorizedUser.role,
         createdAt: Date.now(),
       };
       
       // Save user to storage
-      await saveCurrentUser(mockUser);
-      setUser(mockUser);
-      console.log('User login successful, navigating to tabs');
+      await saveCurrentUser(user);
+      setUser(user);
+      console.log('Login successful, navigating to tabs');
       
       // Navigate to main app
       router.replace('/(tabs)');
@@ -104,45 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Mock register function
-  const register = async (
-    email: string,
-    password: string,
-    role: User['role']
-  ): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      console.log('Attempting registration for:', email);
-      
-      // Mock registration (replace with actual API call)
-      if (password.length < 6) {
-        console.log('Registration failed: password too short');
-        return false;
-      }
-      
-      // Create mock user
-      const mockUser: User = {
-        id: email,
-        email,
-        role,
-        createdAt: Date.now(),
-      };
-      
-      // Save user to storage
-      await saveCurrentUser(mockUser);
-      setUser(mockUser);
-      console.log('Registration successful, navigating to tabs');
-      
-      // Navigate to main app
-      router.replace('/(tabs)');
-      return true;
-    } catch (error) {
-      console.error('Registration failed:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   return (
     <AuthContext.Provider
@@ -151,7 +98,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         logout,
-        register,
       }}
     >
       {children}
