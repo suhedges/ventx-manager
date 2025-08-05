@@ -2,18 +2,21 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import { FlashlightOff, Flashlight, RotateCcw } from 'lucide-react-native';
+import { FlashlightOff, Flashlight, RotateCcw, Edit, Package } from 'lucide-react-native';
 import { useWarehouse } from '@/context/WarehouseContext';
 import { validateUPC } from '@/utils/validators';
+import { Item } from '@/types';
+import QuantityStepper from '@/components/QuantityStepper';
 
 export default function ScannerScreen() {
   const { returnToItem } = useLocalSearchParams<{ returnToItem?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [foundItem, setFoundItem] = useState<Item | null>(null);
   const [isFlashlightOn, setIsFlashlightOn] = useState(false);
   const [facing, setFacing] = useState<CameraType>('back');
   
-  const { updateItem } = useWarehouse();
+  const { updateItem, items, adjustQuantity } = useWarehouse();
   
   // Debounce scanning to prevent multiple rapid scans
   const lastScanTimeRef = useRef(0);
@@ -46,6 +49,10 @@ export default function ScannerScreen() {
       setScannedCode(data);
       lastScanTimeRef.current = now;
       
+      // Look for existing item with this UPC
+      const existingItem = items.find(item => item.upc === data && !item.deleted);
+      setFoundItem(existingItem || null);
+      
       // If we're returning to an item edit screen, update that item's UPC
       if (returnToItem) {
         handleReturnWithUPC(data);
@@ -57,8 +64,10 @@ export default function ScannerScreen() {
     try {
       if (returnToItem === 'new') {
         // Return to new item form with UPC
-        router.back();
-        // In a real app, we would pass the UPC back to the form
+        router.replace({
+          pathname: '/item/new' as any,
+          params: { scannedUPC: upc },
+        });
       } else {
         // Update existing item's UPC
         await updateItem(returnToItem!, { upc });
@@ -81,7 +90,29 @@ export default function ScannerScreen() {
   
   const resetScan = () => {
     setScannedCode(null);
+    setFoundItem(null);
     scannedCodesRef.current = [];
+  };
+  
+  const handleEditItem = () => {
+    if (foundItem) {
+      router.push(`/item/${foundItem.internal}` as any);
+    }
+  };
+  
+  const handleQuantityChange = async (newValue: number) => {
+    if (foundItem && newValue !== foundItem.qty) {
+      try {
+        const delta = newValue - foundItem.qty;
+        await adjustQuantity(foundItem.internal, delta);
+        // Update the found item locally to reflect the change
+        setFoundItem(prev => prev ? { ...prev, qty: newValue } : null);
+        Alert.alert('Success', `Quantity updated to ${newValue}`);
+      } catch (error) {
+        console.error('Failed to update quantity:', error);
+        Alert.alert('Error', 'Failed to update quantity. Please try again.');
+      }
+    }
   };
   
   if (!permission) {
@@ -143,16 +174,77 @@ export default function ScannerScreen() {
         
         {scannedCode && (
           <View style={styles.resultContainer}>
-            <Text style={styles.resultTitle}>Barcode Detected</Text>
-            <Text style={styles.resultCode}>{scannedCode}</Text>
-            <Pressable
-              style={styles.resetButton}
-              onPress={resetScan}
-              testID="reset-scan-button"
-              accessibilityLabel="Scan again"
-            >
-              <Text style={styles.resetButtonText}>Scan Again</Text>
-            </Pressable>
+            {foundItem ? (
+              <>
+                <View style={styles.itemHeader}>
+                  <Package size={24} color="#4caf50" />
+                  <Text style={styles.itemFoundTitle}>Item Found</Text>
+                </View>
+                <Text style={styles.itemId}>{foundItem.internal}</Text>
+                {foundItem.custom && (
+                  <Text style={styles.itemCustom}>{foundItem.custom}</Text>
+                )}
+                <Text style={styles.resultCode}>UPC: {scannedCode}</Text>
+                
+                <View style={styles.itemDetails}>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Bin:</Text>
+                    <Text style={styles.detailValue}>{foundItem.bin || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Min/Max:</Text>
+                    <Text style={styles.detailValue}>
+                      {foundItem.min !== undefined ? foundItem.min : 'N/A'} / {foundItem.max !== undefined ? foundItem.max : 'N/A'}
+                    </Text>
+                  </View>
+                </View>
+                
+                <View style={styles.quantitySection}>
+                  <Text style={styles.quantityLabel}>Quantity:</Text>
+                  <QuantityStepper
+                    value={foundItem.qty}
+                    onChange={handleQuantityChange}
+                    min={0}
+                    max={foundItem.max}
+                    testID="scanner-qty-stepper"
+                  />
+                </View>
+                
+                <View style={styles.actionButtons}>
+                  <Pressable
+                    style={styles.editButton}
+                    onPress={handleEditItem}
+                    testID="edit-item-button"
+                    accessibilityLabel="Edit item details"
+                  >
+                    <Edit size={16} color="#fff" />
+                    <Text style={styles.editButtonText}>Edit Details</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.resetButton}
+                    onPress={resetScan}
+                    testID="reset-scan-button"
+                    accessibilityLabel="Scan again"
+                  >
+                    <Text style={styles.resetButtonText}>Scan Again</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.resultTitle}>Barcode Detected</Text>
+                <Text style={styles.resultCode}>{scannedCode}</Text>
+                <Text style={styles.noItemText}>No item found with this UPC</Text>
+                <Pressable
+                  style={styles.resetButton}
+                  onPress={resetScan}
+                  testID="reset-scan-button"
+                  accessibilityLabel="Scan again"
+                >
+                  <Text style={styles.resetButtonText}>Scan Again</Text>
+                </Pressable>
+              </>
+            )}
           </View>
         )}
         
@@ -210,10 +302,11 @@ const styles = StyleSheet.create({
     bottom: 100,
     left: 20,
     right: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    padding: 20,
+    borderRadius: 12,
     alignItems: 'center',
+    maxHeight: '60%',
   },
   resultTitle: {
     color: '#fff',
@@ -227,16 +320,92 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
   },
-  resetButton: {
-    backgroundColor: '#1a3a6a',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 4,
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  resetButtonText: {
+  itemFoundTitle: {
+    color: '#4caf50',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  itemId: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  itemCustom: {
+    color: '#ccc',
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  itemDetails: {
+    width: '100%',
+    marginVertical: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  detailLabel: {
+    color: '#ccc',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  detailValue: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  quantitySection: {
+    width: '100%',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  quantityLabel: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
+    marginBottom: 8,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  editButton: {
+    backgroundColor: '#1a3a6a',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 6,
+  },
+  resetButton: {
+    backgroundColor: '#666',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  resetButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  noItemText: {
+    color: '#ff9800',
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   controls: {
     position: 'absolute',

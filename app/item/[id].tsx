@@ -19,7 +19,7 @@ import { validateItem, isDuplicateUPC } from '@/utils/validators';
 import { Item } from '@/types';
 
 export default function ItemDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, scannedUPC } = useLocalSearchParams<{ id: string; scannedUPC?: string }>();
   const isNewItem = id === 'new';
   
   const { currentWarehouse, items, createItem, updateItem, deleteItem } = useWarehouse();
@@ -37,7 +37,7 @@ export default function ItemDetailScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   
-  // Load item data if editing an existing item
+  // Load item data if editing an existing item, or set scanned UPC for new items
   useEffect(() => {
     if (!isNewItem && currentWarehouse) {
       const existingItem = items.find(i => i.internal === id);
@@ -47,8 +47,11 @@ export default function ItemDetailScreen() {
         Alert.alert('Error', 'Item not found');
         router.back();
       }
+    } else if (isNewItem && scannedUPC) {
+      // Set the scanned UPC for new items
+      setItem(prev => ({ ...prev, upc: scannedUPC }));
     }
-  }, [isNewItem, id, items, currentWarehouse]);
+  }, [isNewItem, id, items, currentWarehouse, scannedUPC]);
   
   const handleSave = async () => {
     if (!currentWarehouse) {
