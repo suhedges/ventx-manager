@@ -48,7 +48,20 @@
       }
     ],
     "a875541b-0efe-414e-b52e-47191921cc5e": [],
-    "74bc6782-367a-4142-89ff-1382b23dec1e": []
+    "74bc6782-367a-4142-89ff-1382b23dec1e": [
+      {
+        "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
+        "internal": "Test",
+        "custom": "Testt",
+        "qty": 1,
+        "lastTs": 1754426473173,
+        "lastSiteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
+        "upc": "078742295794",
+        "min": 1,
+        "max": 3,
+        "bin": "B52"
+      }
+    ]
   },
   "operations": {
     "11bfd357-e5bf-4735-b94c-3b1e569e74bb": [],
@@ -137,7 +150,90 @@
       }
     ],
     "a875541b-0efe-414e-b52e-47191921cc5e": [],
-    "74bc6782-367a-4142-89ff-1382b23dec1e": []
+    "74bc6782-367a-4142-89ff-1382b23dec1e": [
+      {
+        "opId": "303b2d96-75a5-4e20-8461-b1793b23db1b",
+        "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
+        "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
+        "internal": "Test",
+        "type": "createItem",
+        "ts": 1754426472966,
+        "userId": "sethuriahhedges@gmail.com",
+        "synced": true
+      },
+      {
+        "opId": "99b15e17-6e1c-4ed4-80a1-3ffd19630133",
+        "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
+        "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
+        "internal": "Test",
+        "type": "setField",
+        "field": "custom",
+        "value": "Testt",
+        "ts": 1754426472971,
+        "userId": "sethuriahhedges@gmail.com",
+        "synced": true
+      },
+      {
+        "opId": "017173ba-71c7-49b4-8a5a-5ea0f8ab67bd",
+        "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
+        "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
+        "internal": "Test",
+        "type": "setField",
+        "field": "upc",
+        "value": "078742295794",
+        "ts": 1754426473005,
+        "userId": "sethuriahhedges@gmail.com",
+        "synced": true
+      },
+      {
+        "opId": "73091083-0a62-4834-a9e9-707068e1b178",
+        "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
+        "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
+        "internal": "Test",
+        "type": "setField",
+        "field": "min",
+        "value": 1,
+        "ts": 1754426473052,
+        "userId": "sethuriahhedges@gmail.com",
+        "synced": true
+      },
+      {
+        "opId": "4498d3f6-861b-41f8-ab1c-ccc1163a700d",
+        "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
+        "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
+        "internal": "Test",
+        "type": "setField",
+        "field": "max",
+        "value": 3,
+        "ts": 1754426473097,
+        "userId": "sethuriahhedges@gmail.com",
+        "synced": true
+      },
+      {
+        "opId": "2840c166-fb97-4a47-873c-81c20ebf8219",
+        "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
+        "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
+        "internal": "Test",
+        "type": "setField",
+        "field": "bin",
+        "value": "B52",
+        "ts": 1754426473144,
+        "userId": "sethuriahhedges@gmail.com",
+        "synced": true
+      },
+      {
+        "opId": "d7379a51-25ee-4c6d-ab66-8fdc287d3df1",
+        "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c",
+        "whId": "74bc6782-367a-4142-89ff-1382b23dec1e",
+        "internal": "Test",
+        "type": "setField",
+        "field": "qty",
+        "value": 1,
+        "ts": 1754426473173,
+        "userId": "sethuriahhedges@gmail.com",
+        "synced": true
+      }
+    ]
   },
   "conflicts": {
     "11bfd357-e5bf-4735-b94c-3b1e569e74bb": [],
@@ -145,6 +241,6 @@
     "a875541b-0efe-414e-b52e-47191921cc5e": [],
     "74bc6782-367a-4142-89ff-1382b23dec1e": []
   },
-  "lastSync": 1754426431874,
+  "lastSync": 1754426473509,
   "siteId": "38bcdcb1-1df3-49ed-b280-627e1d9b933c"
 }
