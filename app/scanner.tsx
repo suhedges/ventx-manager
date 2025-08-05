@@ -186,13 +186,13 @@ export default function ScannerScreen() {
                 <Text style={styles.resultCode}>UPC: {scannedCode}</Text>
                 
                 <View style={styles.itemDetails}>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Bin:</Text>
-                    <Text style={styles.detailValue}>{foundItem.bin || 'N/A'}</Text>
+                  <View style={styles.centeredDetailRow}>
+                    <Text style={styles.centeredDetailLabel}>Bin:</Text>
+                    <Text style={styles.centeredDetailValue}>{foundItem.bin || 'N/A'}</Text>
                   </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Min/Max:</Text>
-                    <Text style={styles.detailValue}>
+                  <View style={styles.centeredDetailRow}>
+                    <Text style={styles.centeredDetailLabel}>Min/Max:</Text>
+                    <Text style={styles.centeredDetailValue}>
                       {foundItem.min !== undefined ? foundItem.min : 'N/A'} / {foundItem.max !== undefined ? foundItem.max : 'N/A'}
                     </Text>
                   </View>
@@ -205,7 +205,6 @@ export default function ScannerScreen() {
                       value={foundItem.qty}
                       onChange={handleQuantityChange}
                       min={0}
-                      max={foundItem.max || undefined}
                       testID="scanner-qty-stepper"
                     />
                   </View>
@@ -364,6 +363,23 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
+  centeredDetailRow: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  centeredDetailLabel: {
+    color: '#ccc',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  centeredDetailValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
   quantitySection: {
     width: '100%',
     alignItems: 'center',
@@ -376,7 +392,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   quantityStepperWrapper: {
-    width: 200,
+    width: '100%',
+    maxWidth: 250,
     alignItems: 'center',
   },
   actionButtons: {

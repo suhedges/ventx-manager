@@ -53,7 +53,7 @@ export default function QuantityStepper({
           // Accelerate based on how long the button has been held
           const delta = longPressActive === 'increment' ? 1 : -1;
           const acceleration = Math.min(10, Math.floor(longPressCountRef.current / 10) + 1);
-          const newValue = Math.max(min, Math.min(max ?? Infinity, value + delta * acceleration));
+          const newValue = Math.max(min, value + delta * acceleration);
           
           if (newValue !== value) {
             onChange(newValue);
@@ -85,7 +85,6 @@ export default function QuantityStepper({
   }, [longPressActive, value, min, max, onChange]);
   
   const handleIncrement = () => {
-    if (max !== undefined && value >= max) return;
     onChange(value + 1);
   };
   
@@ -104,7 +103,7 @@ export default function QuantityStepper({
     if (isNaN(newValue)) {
       newValue = value;
     } else {
-      newValue = Math.max(min, Math.min(max ?? Infinity, newValue));
+      newValue = Math.max(min, newValue);
     }
     
     setLocalValue(newValue.toString());
@@ -149,18 +148,14 @@ export default function QuantityStepper({
         />
         
         <Pressable
-          style={[
-            styles.button,
-            max !== undefined && value >= max && styles.buttonDisabled,
-          ]}
+          style={styles.button}
           onPress={handleIncrement}
           onPressIn={() => setLongPressActive('increment')}
           onPressOut={() => setLongPressActive(null)}
-          disabled={max !== undefined && value >= max}
           testID={`${testID}-increment`}
           accessibilityLabel="Increase quantity"
         >
-          <Plus size={20} color={max !== undefined && value >= max ? '#ccc' : '#fff'} />
+          <Plus size={20} color="#fff" />
         </Pressable>
       </View>
     </View>
@@ -194,7 +189,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minWidth: 80,
+    minWidth: 100,
     height: 44,
     textAlign: 'center',
     fontSize: 18,
