@@ -38,8 +38,7 @@ export default function WarehouseSelector({ testID }: WarehouseSelectorProps) {
     }
     
     try {
-      const warehouse = await createWarehouse(newWarehouseName);
-      await selectWarehouse(warehouse.id);
+      await createWarehouse(newWarehouseName);
       setNewWarehouseName('');
       setIsCreating(false);
       setIsModalVisible(false);

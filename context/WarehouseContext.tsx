@@ -150,6 +150,18 @@ export function WarehouseProvider({ children }: { children: React.ReactNode }) {
     await saveWarehouses(updatedWarehouses);
     setWarehouses(updatedWarehouses);
     
+    // Automatically select the newly created warehouse
+    setCurrentWarehouse(newWarehouse);
+    
+    // Initialize empty items for the new warehouse
+    try {
+      const warehouseItems = await getItems(newWarehouse.id);
+      setItems(warehouseItems);
+    } catch (error) {
+      console.error('Failed to load items for new warehouse:', error);
+      setItems([]);
+    }
+    
     return newWarehouse;
   };
   
