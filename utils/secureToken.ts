@@ -38,13 +38,25 @@ const getEncryptionKey = (): string => {
   return baseKey + platformKey;
 };
 
+const getEnvToken = (): string | undefined => {
+  return (
+    process.env.EXPO_PUBLIC_GITHUB_TOKEN ||
+    process.env.GITHUB_TOKEN ||
+    undefined
+  );
+};
+
 // Store the GitHub token securely by splitting it into parts
 export const storeSecureToken = async (): Promise<void> => {
   try {
-    // IMPORTANT: Replace this with your valid GitHub token
-    // Generate a new token at: https://github.com/settings/tokens
-    // Required scopes: 'repo' (Full control of private repositories)
-    const fullToken = 'ghp_REPLACE_WITH_YOUR_VALID_GITHUB_TOKEN_HERE';
+    const fullToken = getEnvToken();
+
+    if (!fullToken) {
+      console.warn(
+        'No GitHub token found in environment. Skipping secure token storage.'
+      );
+      return;
+    }
     
     // Split token into 4 parts
     const partLength = Math.ceil(fullToken.length / 4);
@@ -89,23 +101,22 @@ export const getSecureToken = async (): Promise<string | null> => {
       return xorDecrypt(value, partKey);
     });
     
-    // Check if all parts are present
-    if (decryptedParts.some(part => part === '')) {
-      return null;
-    }
-    
-    // Reconstruct the token
-    const reconstructedToken = decryptedParts.join('');
-    
-    // Validate token format
-    if (reconstructedToken.startsWith('ghp_') && reconstructedToken.length === 40) {
-      // Additional check to ensure it's not the placeholder
-      if (reconstructedToken.includes('REPLACE_WITH_YOUR_VALID_GITHUB_TOKEN')) {
-        console.warn('GitHub token is still a placeholder. Please update with a valid token.');
-        return null;
+    if (!decryptedParts.some(part => part === '')) {
+      // Reconstruct the token
+      const reconstructedToken = decryptedParts.join('');
+
+      // Validate token format
+      if (reconstructedToken.startsWith('ghp_') && reconstructedToken.length === 40) {
+        return reconstructedToken;
       }
       return reconstructedToken;
     }
+
+    const envToken = getEnvToken();
+    if (envToken) {
+      return envToken;
+    }
+
     
     return null;
   } catch (error) {
@@ -120,7 +131,14 @@ export const initializeSecureToken = async (): Promise<void> => {
     const existingToken = await getSecureToken();
     if (!existingToken) {
       await storeSecureToken();
-      console.log('GitHub token initialized securely');
+      const verifiedToken = await getSecureToken();
+      if (verifiedToken) {
+        console.log('GitHub token initialized securely');
+      } else {
+        console.warn(
+          'GitHub token not configured. Set EXPO_PUBLIC_GITHUB_TOKEN to enable sync.'
+        );
+      }
     } else {
       console.log('GitHub token already exists');
     }
