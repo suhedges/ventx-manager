@@ -38,9 +38,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         isOnline: state.isConnected ?? false,
       }));
       
-      // Trigger sync when coming back online
-      if (state.isConnected && currentWarehouse) {
-        triggerFullSync();
+      // Trigger sync when coming back online (with debounce)
+      if (state.isConnected && currentWarehouse && syncStatus.pendingOps > 0) {
+        setTimeout(() => triggerFullSync(), 1000); // Debounce to prevent rapid calls
       }
     });
     
@@ -68,7 +68,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     countPendingOps();
   }, [currentWarehouse]);
   
-  // Periodic sync (every 30 seconds)
+  // Periodic sync (every 2 minutes, reduced frequency to prevent file handle issues)
   useEffect(() => {
     if (!currentWarehouse || !syncStatus.isOnline) return;
     
@@ -76,10 +76,10 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       if (syncStatus.pendingOps > 0 && !syncStatus.isSyncing) {
         triggerFullSync();
       }
-    }, 30000);
+    }, 120000); // Increased to 2 minutes
     
     return () => clearInterval(interval);
-  }, [currentWarehouse, syncStatus]);
+  }, [currentWarehouse, syncStatus.isOnline, syncStatus.pendingOps, syncStatus.isSyncing]);
   
 
   
