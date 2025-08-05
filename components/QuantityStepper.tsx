@@ -194,6 +194,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 80,
     height: 44,
     textAlign: 'center',
     fontSize: 18,

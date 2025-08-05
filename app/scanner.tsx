@@ -200,13 +200,15 @@ export default function ScannerScreen() {
                 
                 <View style={styles.quantitySection}>
                   <Text style={styles.quantityLabel}>Quantity:</Text>
-                  <QuantityStepper
-                    value={foundItem.qty}
-                    onChange={handleQuantityChange}
-                    min={0}
-                    max={foundItem.max}
-                    testID="scanner-qty-stepper"
-                  />
+                  <View style={styles.quantityStepperWrapper}>
+                    <QuantityStepper
+                      value={foundItem.qty}
+                      onChange={handleQuantityChange}
+                      min={0}
+                      max={foundItem.max || undefined}
+                      testID="scanner-qty-stepper"
+                    />
+                  </View>
                 </View>
                 
                 <View style={styles.actionButtons}>
@@ -372,6 +374,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 8,
+  },
+  quantityStepperWrapper: {
+    width: 200,
+    alignItems: 'center',
   },
   actionButtons: {
     flexDirection: 'row',
