@@ -51,9 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await saveCurrentUser(adminUser);
         setUser(adminUser);
         
-        // Navigate to main app
-        router.replace('/(tabs)');
-        
         return true;
       }
       
@@ -74,9 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await saveCurrentUser(mockUser);
       setUser(mockUser);
       
-      // Navigate to main app
-      router.replace('/(tabs)');
-      
       return true;
     } catch (error) {
       console.error('Login failed:', error);
@@ -91,7 +85,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       await saveCurrentUser(null);
       setUser(null);
-      router.replace('/(auth)' as any);
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
@@ -124,9 +117,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save user to storage
       await saveCurrentUser(mockUser);
       setUser(mockUser);
-      
-      // Navigate to main app
-      router.replace('/(tabs)');
       
       return true;
     } catch (error) {

@@ -186,9 +186,18 @@ const GITHUB_CONFIG = {
   baseUrl: 'https://api.github.com',
 };
 
-// Initialize GitHub token from storage
+// Initialize GitHub token from secure storage
 const initializeGitHubToken = async (): Promise<string> => {
   try {
+    const { getSecureToken } = await import('./secureToken');
+    const secureToken = await getSecureToken();
+    
+    if (secureToken) {
+      GITHUB_CONFIG.token = secureToken;
+      return secureToken;
+    }
+    
+    // Fallback to regular storage for backward compatibility
     const { getGitHubToken } = await import('./storage');
     const storedToken = await getGitHubToken();
     if (storedToken && storedToken !== 'ghp_YOUR_NEW_TOKEN_HERE') {
@@ -197,18 +206,18 @@ const initializeGitHubToken = async (): Promise<string> => {
     }
     
     // No valid token found - throw error with instructions
-    throw new Error('GitHub token not configured. Please go to Settings and configure a valid GitHub Personal Access Token.');
+    throw new Error('GitHub token not configured. Please restart the app to initialize the secure token.');
   } catch (error) {
     console.error('Failed to initialize GitHub token:', error);
-    throw new Error('GitHub token not configured. Please go to Settings and configure a valid GitHub Personal Access Token with "repo" scope from https://github.com/settings/tokens');
+    throw new Error('GitHub token not configured. Please restart the app to initialize the secure token.');
   }
 };
 
-// Function to update GitHub token
+// Function to update GitHub token (for manual override if needed)
 export const updateGitHubToken = async (newToken: string): Promise<void> => {
   GITHUB_CONFIG.token = newToken;
   
-  // Save to storage
+  // Save to regular storage (secure token is auto-managed)
   try {
     const { saveGitHubToken } = await import('./storage');
     await saveGitHubToken(newToken);

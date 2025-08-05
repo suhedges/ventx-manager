@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ScrollView } from 'react-native';
-import { LogOut, User, Shield, Calendar } from 'lucide-react-native';
+import { LogOut, User, Shield, Calendar, LogIn } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
+import { router } from 'expo-router';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -30,7 +31,39 @@ export default function ProfileScreen() {
   if (!user) {
     return (
       <View style={styles.container}>
-        <Text>Not logged in</Text>
+        <View style={styles.notLoggedInContainer}>
+          <View style={styles.loginPrompt}>
+            <User size={64} color="#1a3a6a" style={styles.loginIcon} />
+            <Text style={styles.notLoggedInTitle}>Welcome to VentX</Text>
+            <Text style={styles.notLoggedInSubtitle}>
+              Please log in to access your inventory management features
+            </Text>
+            
+            <Pressable
+              style={styles.loginButton}
+              onPress={() => router.push('/(auth)/login')}
+              testID="login-button"
+              accessibilityLabel="Go to login"
+            >
+              <LogIn size={20} color="#fff" />
+              <Text style={styles.loginButtonText}>Log In</Text>
+            </Pressable>
+            
+            <Pressable
+              style={styles.registerButton}
+              onPress={() => router.push('/(auth)/register')}
+              testID="register-button"
+              accessibilityLabel="Go to register"
+            >
+              <Text style={styles.registerButtonText}>Create Account</Text>
+            </Pressable>
+          </View>
+        </View>
+        
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>VentX - Phone Stock Manager</Text>
+          <Text style={styles.versionText}>Version 1.0.0</Text>
+        </View>
       </View>
     );
   }
@@ -184,5 +217,73 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginTop: 4,
+  },
+  notLoggedInContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loginPrompt: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    maxWidth: 400,
+    width: '100%',
+  },
+  loginIcon: {
+    marginBottom: 16,
+  },
+  notLoggedInTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a3a6a',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  notLoggedInSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  loginButton: {
+    backgroundColor: '#1a3a6a',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    marginBottom: 12,
+    width: '100%',
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  registerButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#1a3a6a',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    width: '100%',
+  },
+  registerButtonText: {
+    color: '#1a3a6a',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

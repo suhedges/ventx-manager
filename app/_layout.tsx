@@ -9,6 +9,8 @@ import { SyncProvider } from "@/context/SyncContext";
 import { WarehouseProvider } from "@/context/WarehouseContext";
 import { SyncHookProvider } from "@/context/SyncHook";
 import { StatusBar } from "expo-status-bar";
+import { initializeSecureToken } from "@/utils/secureToken";
+
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -23,6 +25,7 @@ function RootLayoutNav() {
       headerTintColor: '#fff',
       headerTitleStyle: { fontWeight: 'bold' },
     }}>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="scanner" options={{ presentation: 'modal', title: 'Barcode Scanner' }} />
@@ -35,7 +38,19 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   useEffect(() => {
-    SplashScreen.hideAsync();
+    const initializeApp = async () => {
+      try {
+        // Initialize secure GitHub token
+        await initializeSecureToken();
+        console.log('App initialization completed');
+      } catch (error) {
+        console.error('App initialization failed:', error);
+      } finally {
+        SplashScreen.hideAsync();
+      }
+    };
+    
+    initializeApp();
   }, []);
 
   return (
