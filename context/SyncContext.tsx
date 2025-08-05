@@ -85,18 +85,25 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   
   const triggerFullSync = async (): Promise<void> => {
     if (!syncStatus.isOnline || syncStatus.isSyncing) {
+      console.log('Sync skipped - offline or already syncing');
       return;
     }
+    
+    console.log('Starting full sync...');
     
     try {
       setSyncStatus(prev => ({ ...prev, isSyncing: true }));
       
       const result = await syncAllWarehousesToGitHub();
+      console.log('Sync result:', result);
       
       if (result.success) {
+        const newSyncTime = Date.now();
+        console.log('Sync successful, updating lastSyncTime to:', new Date(newSyncTime).toISOString());
+        
         setSyncStatus(prev => ({
           ...prev,
-          lastSyncTime: Date.now(),
+          lastSyncTime: newSyncTime,
           pendingOps: 0,
         }));
         setLastSyncError(null);
@@ -112,6 +119,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
           'All data has been successfully synced to GitHub.',
           [{ text: 'OK' }]
         );
+      } else {
+        console.log('Sync failed - result.success is false');
+        setLastSyncError('Sync failed - no success status returned');
       }
     } catch (error) {
       console.error('Full sync failed:', error);
@@ -134,6 +144,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       }
     } finally {
       setSyncStatus(prev => ({ ...prev, isSyncing: false }));
+      console.log('Sync process completed');
     }
   };
   

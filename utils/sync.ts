@@ -463,14 +463,18 @@ export const loadWarehousesFromGitHub = async (): Promise<{ success: boolean; wa
 // Sync all warehouses to GitHub
 export const syncAllWarehousesToGitHub = async (): Promise<{ success: boolean; conflicts: Conflict[] }> => {
   try {
+    console.log('syncAllWarehousesToGitHub: Starting sync process');
     const siteId = await getSiteId();
     const dataPath = 'data/sync-data.json';
+    console.log('syncAllWarehousesToGitHub: Site ID:', siteId);
     
     // Get all local warehouses
     const { getWarehouses } = await import('./storage');
     const localWarehouses = await getWarehouses();
+    console.log('syncAllWarehousesToGitHub: Local warehouses count:', localWarehouses.length);
     
     // Get remote data from GitHub
+    console.log('syncAllWarehousesToGitHub: Fetching remote data from GitHub');
     const remoteFile = await getFileFromGitHub(dataPath);
     let remoteData: GitHubSyncData = {
       warehouses: [],
@@ -484,9 +488,12 @@ export const syncAllWarehousesToGitHub = async (): Promise<{ success: boolean; c
     if (remoteFile) {
       try {
         remoteData = JSON.parse(remoteFile.content);
+        console.log('syncAllWarehousesToGitHub: Remote data loaded successfully');
       } catch (error) {
         console.warn('Failed to parse remote data, using empty state');
       }
+    } else {
+      console.log('syncAllWarehousesToGitHub: No remote file found, using empty state');
     }
 
     // Merge warehouses (simple last-writer-wins for now)
@@ -556,13 +563,16 @@ export const syncAllWarehousesToGitHub = async (): Promise<{ success: boolean; c
     };
     
     // Save to GitHub
+    console.log('syncAllWarehousesToGitHub: Saving data to GitHub...');
     await saveFileToGitHub(dataPath, JSON.stringify(updatedData, null, 2), remoteFile?.sha);
+    console.log('syncAllWarehousesToGitHub: Data saved to GitHub successfully');
     
     // Update local warehouses
     const { saveWarehouses } = await import('./storage');
     await saveWarehouses(mergedWarehouses);
+    console.log('syncAllWarehousesToGitHub: Local warehouses updated');
     
-    console.log(`Full sync completed. Warehouses: ${mergedWarehouses.length}, Total conflicts: ${allConflicts.length}`);
+    console.log(`syncAllWarehousesToGitHub: Full sync completed successfully. Warehouses: ${mergedWarehouses.length}, Total conflicts: ${allConflicts.length}`);
     
     return {
       success: true,
