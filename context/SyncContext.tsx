@@ -9,7 +9,6 @@ import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 
 interface SyncContextType {
   syncStatus: SyncStatus;
-  triggerSync: () => Promise<void>;
   triggerFullSync: () => Promise<void>;
   addPendingOp: (op: Op) => void;
   conflicts: Conflict[];
@@ -41,7 +40,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       
       // Trigger sync when coming back online
       if (state.isConnected && currentWarehouse) {
-        triggerSync();
+        triggerFullSync();
       }
     });
     
@@ -75,53 +74,14 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     
     const interval = setInterval(() => {
       if (syncStatus.pendingOps > 0 && !syncStatus.isSyncing) {
-        triggerSync();
+        triggerFullSync();
       }
     }, 30000);
     
     return () => clearInterval(interval);
   }, [currentWarehouse, syncStatus]);
   
-  const triggerSync = async (): Promise<void> => {
-    if (!currentWarehouse || !syncStatus.isOnline || syncStatus.isSyncing) {
-      return;
-    }
-    
-    try {
-      setSyncStatus(prev => ({ ...prev, isSyncing: true }));
-      
-      const result = await syncWithServer(currentWarehouse.id);
-      
-      if (result.success) {
-        setSyncStatus(prev => ({
-          ...prev,
-          lastSyncTime: Date.now(),
-          pendingOps: 0,
-        }));
-        setLastSyncError(null);
-        
-        // Handle conflicts
-        if (result.conflicts.length > 0) {
-          setConflicts(result.conflicts);
-        }
-      }
-    } catch (error) {
-      console.error('Sync failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
-      setLastSyncError(errorMessage);
-      
-      // Show user-friendly error for GitHub authentication issues
-      if (errorMessage.includes('GitHub authentication failed')) {
-        Alert.alert(
-          'Sync Failed',
-          'GitHub authentication failed. Please update your GitHub token in Settings.',
-          [{ text: 'OK' }]
-        );
-      }
-    } finally {
-      setSyncStatus(prev => ({ ...prev, isSyncing: false }));
-    }
-  };
+
   
   const triggerFullSync = async (): Promise<void> => {
     if (!syncStatus.isOnline || syncStatus.isSyncing) {
@@ -185,7 +145,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     
     // Trigger sync if online
     if (syncStatus.isOnline && !syncStatus.isSyncing) {
-      triggerSync();
+      triggerFullSync();
     }
   };
   
@@ -208,7 +168,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     <SyncContext.Provider
       value={{
         syncStatus,
-        triggerSync,
         triggerFullSync,
         addPendingOp,
         conflicts,

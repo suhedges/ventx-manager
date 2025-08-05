@@ -8,7 +8,7 @@ interface SyncStatusProps {
 }
 
 export default function SyncStatus({ testID }: SyncStatusProps) {
-  const { syncStatus, triggerSync, triggerFullSync, lastSyncError } = useSync();
+  const { syncStatus, triggerFullSync, lastSyncError } = useSync();
   
   const formatLastSyncTime = () => {
     if (!syncStatus.lastSyncTime) return 'Never';
@@ -81,42 +81,20 @@ export default function SyncStatus({ testID }: SyncStatusProps) {
         <Pressable
           style={[
             styles.syncButton,
-            styles.localSyncButton,
-            (!syncStatus.isOnline || syncStatus.isSyncing) && styles.syncButtonDisabled,
-          ]}
-          onPress={triggerSync}
-          disabled={!syncStatus.isOnline || syncStatus.isSyncing}
-          testID={`${testID}-sync-button`}
-          accessibilityLabel="Sync current warehouse"
-        >
-          {syncStatus.isSyncing ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <RefreshCw size={14} color="#fff" />
-          )}
-          <Text style={styles.syncButtonText}>
-            {syncStatus.isSyncing ? 'Syncing...' : 'Quick Sync'}
-          </Text>
-        </Pressable>
-        
-        <Pressable
-          style={[
-            styles.syncButton,
-            styles.githubSyncButton,
             (!syncStatus.isOnline || syncStatus.isSyncing) && styles.syncButtonDisabled,
           ]}
           onPress={triggerFullSync}
           disabled={!syncStatus.isOnline || syncStatus.isSyncing}
-          testID={`${testID}-github-sync-button`}
-          accessibilityLabel="Sync all data to GitHub"
+          testID={`${testID}-sync-button`}
+          accessibilityLabel="Sync all data"
         >
           {syncStatus.isSyncing ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <RefreshCw size={14} color="#fff" />
+            <RefreshCw size={16} color="#fff" />
           )}
           <Text style={styles.syncButtonText}>
-            Sync to GitHub
+            {syncStatus.isSyncing ? 'Syncing...' : 'Sync'}
           </Text>
         </Pressable>
       </View>
@@ -181,21 +159,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   buttonContainer: {
-    flexDirection: 'column',
-    gap: 4,
+    flexDirection: 'row',
   },
   syncButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 4,
-  },
-  localSyncButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
     backgroundColor: '#1a3a6a',
-  },
-  githubSyncButton: {
-    backgroundColor: '#2d5a27',
   },
   syncButtonDisabled: {
     backgroundColor: '#a0a0a0',
