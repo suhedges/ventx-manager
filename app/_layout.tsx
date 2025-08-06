@@ -5,6 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/context/AuthContext";
 import { SyncProvider } from "@/context/SyncContext";
 import { WarehouseProvider } from "@/context/WarehouseContext";
@@ -82,26 +83,28 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SyncHookProvider>
-        <AuthProvider>
-          <WarehouseProvider>
-            <SyncProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <StatusBar style="light" />
-                {initError && (
-                  <View style={{ backgroundColor: '#ff6b6b', padding: 8 }}>
-                    <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
-                      Init Warning: {initError}
-                    </Text>
-                  </View>
-                )}
-                <RootLayoutNav />
-              </GestureHandlerRootView>
-            </SyncProvider>
-          </WarehouseProvider>
-        </AuthProvider>
-      </SyncHookProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <SyncHookProvider>
+          <AuthProvider>
+            <WarehouseProvider>
+              <SyncProvider>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <StatusBar style="light" />
+                  {initError && (
+                    <View style={{ backgroundColor: '#ff6b6b', padding: 8 }}>
+                      <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
+                        Init Warning: {initError}
+                      </Text>
+                    </View>
+                  )}
+                  <RootLayoutNav />
+                </GestureHandlerRootView>
+              </SyncProvider>
+            </WarehouseProvider>
+          </AuthProvider>
+        </SyncHookProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
