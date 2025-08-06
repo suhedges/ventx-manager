@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { useAuth } from '@/context/AuthContext';
+import { router } from 'expo-router';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -38,6 +39,7 @@ export default function LoginScreen() {
       Alert.alert('Login Failed', 'Invalid email or password');
     } else {
       console.log('Login successful from login screen');
+      router.replace('/(tabs)/');
     }
   };
   

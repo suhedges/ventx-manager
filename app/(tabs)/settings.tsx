@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, Pressable, Alert, ScrollView, TextInput } from 'react-native';
-import { Database, HelpCircle, Key, Save, CheckCircle, XCircle } from 'lucide-react-native';
+import { Database, HelpCircle, Key, Save, CheckCircle, XCircle, LogOut } from 'lucide-react-native';
+import { router } from 'expo-router';
 import SyncStatus from '@/components/SyncStatus';
+import { useAuth } from '@/context/AuthContext';
 import { updateGitHubToken } from '@/utils/sync';
 import { hasStoredToken, clearSecureToken } from '@/utils/secureToken';
 
 export default function SettingsScreen() {
+  const { logout, user } = useAuth();
   const [offlineMode, setOfflineMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [autoSync, setAutoSync] = useState(true);
@@ -140,6 +143,24 @@ export default function SettingsScreen() {
         [{ text: 'OK' }]
       );
     }
+  };
+  
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/(auth)/login');
+          },
+        },
+      ]
+    );
   };
   
   return (
@@ -293,6 +314,26 @@ export default function SettingsScreen() {
             <Text style={[styles.actionButtonText, styles.dangerText]}>
               Clear Local Data
             </Text>
+          </Pressable>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          
+          <View style={styles.userInfo}>
+            <Text style={styles.userLabel}>Logged in as:</Text>
+            <Text style={styles.userEmail}>{user?.email}</Text>
+            <Text style={styles.userRole}>Role: {user?.role}</Text>
+          </View>
+          
+          <Pressable
+            style={styles.actionButton}
+            onPress={handleLogout}
+            testID="logout-button"
+            accessibilityLabel="Logout"
+          >
+            <LogOut size={20} color="#e53935" />
+            <Text style={[styles.actionButtonText, styles.dangerText]}>Logout</Text>
           </Pressable>
         </View>
         
@@ -463,5 +504,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 2,
+  },
+  userInfo: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    marginBottom: 8,
+  },
+  userLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  userRole: {
+    fontSize: 14,
+    color: '#1a3a6a',
+    marginTop: 2,
+    textTransform: 'capitalize',
   },
 });

@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { getCurrentUser, saveCurrentUser } from '@/utils/storage';
-import { router } from 'expo-router';
 import { AUTHORIZED_USERS } from '@/constants/users';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string, role: User['role']) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -60,13 +60,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save user to storage
       await saveCurrentUser(user);
       setUser(user);
-      console.log('Login successful, navigating to tabs');
+      console.log('Login successful');
       
-      // Navigate to main app
-      router.replace('/(tabs)');
+      // Don't navigate here, let the index.tsx handle navigation
       return true;
     } catch (error) {
       console.error('Login failed:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (email: string, password: string, role: User['role']): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      console.log('Attempting registration for:', email);
+      
+      // Check if user already exists
+      const existingUser = AUTHORIZED_USERS.find(user => user.email === email);
+      if (existingUser) {
+        console.log('Registration failed: user already exists');
+        return false;
+      }
+      
+      // For demo purposes, we'll just create a user object and save it
+      // In a real app, you'd send this to your backend
+      const user: User = {
+        id: email,
+        email: email,
+        role: role,
+        createdAt: Date.now(),
+      };
+      
+      // Save user to storage
+      await saveCurrentUser(user);
+      setUser(user);
+      console.log('Registration successful');
+      
+      // Don't navigate here, let the index.tsx handle navigation
+      return true;
+    } catch (error) {
+      console.error('Registration failed:', error);
       return false;
     } finally {
       setIsLoading(false);
@@ -78,10 +113,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       await saveCurrentUser(null);
       setUser(null);
-      console.log('User logged out, navigating to login');
+      console.log('User logged out');
       
-      // Navigate to login screen
-      router.replace('/(auth)/login');
+      // Don't navigate here, let the index.tsx handle navigation
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
@@ -97,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoading,
         login,
+        register,
         logout,
       }}
     >

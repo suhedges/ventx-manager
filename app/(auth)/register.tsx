@@ -11,7 +11,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { User } from '@/types';
 
@@ -47,6 +47,8 @@ export default function RegisterScreen() {
     
     if (!success) {
       Alert.alert('Registration Failed', 'Failed to create account. Please try again.');
+    } else {
+      router.replace('/(tabs)/');
     }
   };
   
