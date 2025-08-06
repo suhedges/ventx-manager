@@ -2,7 +2,7 @@ import '@/utils/polyfills';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -11,8 +11,6 @@ import { SyncProvider } from "@/context/SyncContext";
 import { WarehouseProvider } from "@/context/WarehouseContext";
 import { SyncHookProvider } from "@/context/SyncHook";
 import { StatusBar } from "expo-status-bar";
-import { initializeSecureToken } from "@/utils/secureToken";
-
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -39,22 +37,18 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [isInitialized, setIsInitialized] = React.useState(false);
-  const [initError, setInitError] = React.useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
         console.log('Starting app initialization...');
-        
-        // Skip secure token initialization to prevent bundling issues
-        console.log('Skipping secure token initialization');
         console.log('App initialization completed successfully');
         setIsInitialized(true);
       } catch (error) {
         console.error('App initialization failed:', error);
         setInitError(error instanceof Error ? error.message : 'Unknown initialization error');
-        // Still set as initialized to allow app to continue
         setIsInitialized(true);
       } finally {
         try {
