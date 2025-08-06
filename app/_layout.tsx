@@ -74,8 +74,8 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <SyncHookProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <SyncHookProvider>
             <WarehouseProvider>
               <SyncProvider>
                 <GestureHandlerRootView style={{ flex: 1 }}>
@@ -91,8 +91,8 @@ export default function RootLayout() {
                 </GestureHandlerRootView>
               </SyncProvider>
             </WarehouseProvider>
-          </AuthProvider>
-        </SyncHookProvider>
+          </SyncHookProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );
