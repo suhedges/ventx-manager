@@ -11,7 +11,6 @@ import { WarehouseProvider } from "@/context/WarehouseContext";
 import { SyncHookProvider } from "@/context/SyncHook";
 import { StatusBar } from "expo-status-bar";
 import { initializeSecureToken } from "@/utils/secureToken";
-import ErrorBoundary from "@/components/ErrorBoundary";
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -83,38 +82,26 @@ export default function RootLayout() {
   }
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ErrorBoundary>
-          <SyncHookProvider>
-            <ErrorBoundary>
-              <AuthProvider>
-                <ErrorBoundary>
-                  <WarehouseProvider>
-                    <ErrorBoundary>
-                      <SyncProvider>
-                        <GestureHandlerRootView style={{ flex: 1 }}>
-                          <StatusBar style="light" />
-                          {initError && (
-                            <View style={{ backgroundColor: '#ff6b6b', padding: 8 }}>
-                              <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
-                                Init Warning: {initError}
-                              </Text>
-                            </View>
-                          )}
-                          <ErrorBoundary>
-                            <RootLayoutNav />
-                          </ErrorBoundary>
-                        </GestureHandlerRootView>
-                      </SyncProvider>
-                    </ErrorBoundary>
-                  </WarehouseProvider>
-                </ErrorBoundary>
-              </AuthProvider>
-            </ErrorBoundary>
-          </SyncHookProvider>
-        </ErrorBoundary>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <SyncHookProvider>
+        <AuthProvider>
+          <WarehouseProvider>
+            <SyncProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <StatusBar style="light" />
+                {initError && (
+                  <View style={{ backgroundColor: '#ff6b6b', padding: 8 }}>
+                    <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
+                      Init Warning: {initError}
+                    </Text>
+                  </View>
+                )}
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </SyncProvider>
+          </WarehouseProvider>
+        </AuthProvider>
+      </SyncHookProvider>
+    </QueryClientProvider>
   );
 }
