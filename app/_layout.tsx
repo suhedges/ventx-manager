@@ -47,13 +47,8 @@ export default function RootLayout() {
       try {
         console.log('Starting app initialization...');
         
-        // Initialize secure GitHub token with timeout
-        const initPromise = initializeSecureToken();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Initialization timeout')), 10000)
-        );
-        
-        await Promise.race([initPromise, timeoutPromise]);
+        // Skip secure token initialization to prevent bundling issues
+        console.log('Skipping secure token initialization');
         console.log('App initialization completed successfully');
         setIsInitialized(true);
       } catch (error) {
