@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { SyncStatus, Op, Conflict } from '@/types';
-import { getOps, getSiteId } from '@/utils/storage';
-import { syncWithServer, syncAllWarehousesToGitHub } from '@/utils/sync';
+import { getOps } from '@/utils/storage';
+import { syncAllWarehousesToGitHub } from '@/utils/sync';
 import { useWarehouse } from './WarehouseContext';
 import { useSyncHook } from './SyncHook';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
@@ -32,6 +32,12 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   
   // Monitor network status
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      // For web, assume always online
+      setSyncStatus(prev => ({ ...prev, isOnline: true }));
+      return;
+    }
+    
     const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
       setSyncStatus(prev => ({
         ...prev,

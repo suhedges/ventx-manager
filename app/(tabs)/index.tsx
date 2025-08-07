@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, BarcodeIcon } from 'lucide-react-native';
+import { Plus, ScanLine } from 'lucide-react-native';
 import { useWarehouse } from '@/context/WarehouseContext';
 import { useSync } from '@/context/SyncContext';
 import WarehouseSelector from '@/components/WarehouseSelector';
@@ -82,7 +82,7 @@ export default function InventoryScreen() {
           testID="scanner-fab"
           accessibilityLabel="Scan barcode"
         >
-          <BarcodeIcon size={24} color="#fff" />
+          <ScanLine size={24} color="#fff" />
         </Pressable>
         <Pressable
           style={styles.fab}
