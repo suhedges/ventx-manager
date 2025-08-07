@@ -25,7 +25,7 @@ function RootLayoutNav() {
       headerTintColor: '#fff',
       headerTitleStyle: { fontWeight: 'bold' },
     }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="scanner" options={{ presentation: 'modal', title: 'Barcode Scanner' }} />
