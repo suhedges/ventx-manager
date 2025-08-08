@@ -38,7 +38,7 @@ function RootLayoutNav() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [initError, setInitError] = useState<string | null>(null);
 
@@ -101,3 +101,5 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+export default RootLayout;
