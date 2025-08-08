@@ -3,9 +3,17 @@ import { Alert, Platform } from 'react-native';
 import { SyncStatus, Op, Conflict } from '@/types';
 import { getOps } from '@/utils/storage';
 import { syncAllWarehousesToGitHub } from '@/utils/sync';
-import { useWarehouse } from './WarehouseContext';
 import { useSyncHook } from './SyncHook';
-import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
+
+// Conditional import for NetInfo to handle web compatibility
+let NetInfo: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    NetInfo = require('@react-native-community/netinfo').default;
+  } catch (error) {
+    console.warn('NetInfo not available:', error);
+  }
+}
 
 interface SyncContextType {
   syncStatus: SyncStatus;
@@ -14,6 +22,7 @@ interface SyncContextType {
   conflicts: Conflict[];
   resolveConflict: (conflictId: string, keepMine: boolean) => Promise<void>;
   lastSyncError: string | null;
+  setCurrentWarehouseId: (id: string | null) => void;
 }
 
 const SyncContext = createContext<SyncContextType | undefined>(undefined);
@@ -27,8 +36,8 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   });
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [lastSyncError, setLastSyncError] = useState<string | null>(null);
-  const { currentWarehouse } = useWarehouse();
   const { registerSyncCallback } = useSyncHook();
+  const [currentWarehouseId, setCurrentWarehouseId] = useState<string | null>(null);
   
   // Monitor network status
   useEffect(() => {
@@ -38,31 +47,37 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     
-    const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
+    if (!NetInfo) {
+      // Fallback: assume online if NetInfo is not available
+      setSyncStatus(prev => ({ ...prev, isOnline: true }));
+      return;
+    }
+    
+    const unsubscribe = NetInfo.addEventListener((state: any) => {
       setSyncStatus(prev => ({
         ...prev,
         isOnline: state.isConnected ?? false,
       }));
       
       // Trigger sync when coming back online (with debounce)
-      if (state.isConnected && currentWarehouse && syncStatus.pendingOps > 0) {
+      if (state.isConnected && currentWarehouseId && syncStatus.pendingOps > 0) {
         setTimeout(() => triggerFullSync(), 1000); // Debounce to prevent rapid calls
       }
     });
     
     return () => unsubscribe();
-  }, [currentWarehouse]);
+  }, [currentWarehouseId]);
   
   // Count pending ops when warehouse changes
   useEffect(() => {
     const countPendingOps = async () => {
-      if (!currentWarehouse) {
+      if (!currentWarehouseId) {
         setSyncStatus(prev => ({ ...prev, pendingOps: 0 }));
         return;
       }
       
       try {
-        const ops = await getOps(currentWarehouse.id);
+        const ops = await getOps(currentWarehouseId);
         const pendingOps = ops.filter(op => !op.synced).length;
         
         setSyncStatus(prev => ({ ...prev, pendingOps }));
@@ -72,11 +87,11 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     };
     
     countPendingOps();
-  }, [currentWarehouse]);
+  }, [currentWarehouseId]);
   
   // Periodic sync (every 2 minutes, reduced frequency to prevent file handle issues)
   useEffect(() => {
-    if (!currentWarehouse || !syncStatus.isOnline) return;
+    if (!currentWarehouseId || !syncStatus.isOnline) return;
     
     const interval = setInterval(() => {
       if (syncStatus.pendingOps > 0 && !syncStatus.isSyncing) {
@@ -85,7 +100,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     }, 120000); // Increased to 2 minutes
     
     return () => clearInterval(interval);
-  }, [currentWarehouse, syncStatus.isOnline, syncStatus.pendingOps, syncStatus.isSyncing]);
+  }, [currentWarehouseId, syncStatus.isOnline, syncStatus.pendingOps, syncStatus.isSyncing]);
   
 
   
@@ -196,6 +211,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         conflicts,
         resolveConflict: handleResolveConflict,
         lastSyncError,
+        setCurrentWarehouseId,
       }}
     >
       {children}

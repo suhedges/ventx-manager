@@ -6,11 +6,13 @@ import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AuthProvider } from "@/context/AuthContext";
-import { SyncProvider } from "@/context/SyncContext";
-import { WarehouseProvider } from "@/context/WarehouseContext";
-import { SyncHookProvider } from "@/context/SyncHook";
 import { StatusBar } from "expo-status-bar";
+
+// Import contexts individually to avoid circular dependencies
+import { AuthProvider } from "@/context/AuthContext";
+import { SyncHookProvider } from "@/context/SyncHook";
+import { WarehouseProvider } from "@/context/WarehouseContext";
+import { SyncProvider } from "@/context/SyncContext";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
