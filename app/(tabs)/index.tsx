@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, Pressable, Alert, ActivityIndicator, Text } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, ScanLine } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { useWarehouse } from '@/context/WarehouseContext';
 import { useSync } from '@/context/SyncContext';
@@ -106,7 +106,7 @@ export default function InventoryScreen() {
           testID="scanner-fab"
           accessibilityLabel="Scan barcode"
         >
-          <ScanLine size={24} color="#fff" />
+          <Ionicons name="scan-outline" size={24} color="#fff" />
         </Pressable>
         <Pressable
           style={styles.fab}
@@ -114,7 +114,7 @@ export default function InventoryScreen() {
           testID="add-item-fab"
           accessibilityLabel="Add new item"
         >
-          <Plus size={24} color="#fff" />
+          <Ionicons name="add" size={28} color="#fff" />
         </Pressable>
       </View>
       

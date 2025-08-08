@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
-import { Clipboard, Package, Settings, User } from "lucide-react-native";
 import React from "react";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TabLayout() {
   return (
@@ -17,28 +17,36 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Inventory",
-          tabBarIcon: ({ color }) => <Package color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="cube-outline" size={size ?? 24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="import-export"
         options={{
           title: "Import/Export",
-          tabBarIcon: ({ color }) => <Clipboard color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="clipboard-outline" size={size ?? 24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => <User color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-circle-outline" size={size ?? 24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color }) => <Settings color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size ?? 24} color={color} />
+          ),
         }}
       />
     </Tabs>
