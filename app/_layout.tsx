@@ -44,6 +44,8 @@ export default function RootLayout() {
     const initializeApp = async () => {
       try {
         console.log('Starting app initialization...');
+        // Add a small delay to ensure all providers are ready
+        await new Promise(resolve => setTimeout(resolve, 100));
         console.log('App initialization completed successfully');
         setIsInitialized(true);
       } catch (error) {

@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, Pressable, Alert } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, StyleSheet, Pressable, Alert, ActivityIndicator, Text } from 'react-native';
 import { router } from 'expo-router';
 import { Plus, ScanLine } from 'lucide-react-native';
+import { useAuth } from '@/context/AuthContext';
 import { useWarehouse } from '@/context/WarehouseContext';
 import { useSync } from '@/context/SyncContext';
 import WarehouseSelector from '@/components/WarehouseSelector';
@@ -13,6 +14,7 @@ import ConflictBanner from '@/components/ConflictBanner';
 import { FilterOptions, Item } from '@/types';
 
 export default function InventoryScreen() {
+  const { user, isLoading: authLoading } = useAuth();
   const { currentWarehouse, filteredItems, filterOptions, setFilterOptions, isLoading } = useWarehouse();
   const { conflicts } = useSync();
   
@@ -51,6 +53,28 @@ export default function InventoryScreen() {
   const handleItemPress = useCallback((item: Item) => {
     router.push(`/item/${item.internal}` as any);
   }, []);
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/(auth)/login');
+    }
+  }, [user, authLoading]);
+  
+  // Show loading screen while checking auth
+  if (authLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1a3a6a" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+  
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
   
   return (
     <View style={styles.container}>
@@ -111,6 +135,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   header: {
     padding: 16,
